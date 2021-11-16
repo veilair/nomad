@@ -677,6 +677,11 @@ func (c *OperatorDebugCommand) collectAgentHost(path, id string, client *api.Cli
 		host, err = client.Agent().Host("", id, nil)
 	}
 
+	if isRedirectError(err) {
+		c.Ui.Warn(fmt.Sprintf("%s/%s: /v1/agent/host unavailable on this agent", path, id))
+		return
+	}
+
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("%s/%s: Failed to retrieve agent host data, err: %v", path, id, err))
 
@@ -1397,4 +1402,14 @@ func defaultHttpClient() *http.Client {
 	}
 
 	return httpClient
+}
+
+// isRedirectError returns true if an error is a redirect error.
+func isRedirectError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	const redirectErr string = `invalid character '<' looking for beginning of value`
+	return strings.Contains(err.Error(), redirectErr)
 }
