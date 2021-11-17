@@ -99,8 +99,8 @@ require (
 	github.com/opencontainers/runtime-spec v1.0.3-0.20200929063507-e6143ca7d51d
 	github.com/pkg/errors v0.9.1
 	github.com/posener/complete v1.2.3
-	github.com/prometheus/client_golang v1.4.0
-	github.com/prometheus/common v0.9.1
+	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/common v0.32.1
 	github.com/rs/cors v1.8.0
 	github.com/ryanuber/columnize v2.1.1-0.20170703205827-abc90934186a+incompatible
 	github.com/ryanuber/go-glob v1.0.0
@@ -117,14 +117,14 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210818153620-00dd8d7831e7
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
-	google.golang.org/grpc v1.29.1
+	google.golang.org/grpc v1.31.0
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 	gopkg.in/tomb.v2 v2.0.0-20140626144623-14b3d72120e8
 )
 
 require (
-	cloud.google.com/go v0.46.3 // indirect
-	cloud.google.com/go/storage v1.0.0 // indirect
+	cloud.google.com/go v0.65.0 // indirect
+	cloud.google.com/go/storage v1.10.0 // indirect
 	github.com/Azure/azure-sdk-for-go v44.0.0+incompatible // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
@@ -174,6 +174,7 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/godbus/dbus/v5 v5.0.3 // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
 	github.com/google/uuid v1.1.1 // indirect
@@ -190,7 +191,7 @@ require (
 	github.com/ishidawataru/sctp v0.0.0-20191218070446-00ab2ac2db07 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/joyent/triton-go v0.0.0-20190112182421-51ffac552869 // indirect
-	github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024 // indirect
+	github.com/jstemmer/go-junit-report v0.9.1 // indirect
 	github.com/klauspost/compress v1.11.2 // indirect
 	github.com/linode/linodego v0.7.1 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
@@ -213,7 +214,7 @@ require (
 	github.com/pierrec/lz4 v2.5.2+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
-	github.com/prometheus/procfs v0.0.8 // indirect
+	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/renier/xmlrpc v0.0.0-20170708154548-ce4a1a486c03 // indirect
 	github.com/seccomp/libseccomp-golang v0.9.2-0.20200314001724-bdab42bd5128 // indirect
 	github.com/sirupsen/logrus v1.7.0 // indirect
@@ -231,23 +232,21 @@ require (
 	github.com/vmihailenco/tagparser v0.1.1 // indirect
 	github.com/vmware/govmomi v0.18.0 // indirect
 	github.com/willf/bitset v1.1.11 // indirect
-	go.opencensus.io v0.22.1-0.20190713072201-b4a14686f0a9 // indirect
-	golang.org/x/exp v0.0.0-20190829153037-c13cbed26979 // indirect
-	golang.org/x/lint v0.0.0-20190930215403-16217165b5de // indirect
+	go.opencensus.io v0.22.4 // indirect
+	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
+	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c // indirect
 	golang.org/x/text v0.3.6 // indirect
 	golang.org/x/tools v0.1.5 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	google.golang.org/api v0.13.0 // indirect
-	google.golang.org/appengine v1.6.5 // indirect
-	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
+	google.golang.org/api v0.30.0 // indirect
+	google.golang.org/appengine v1.6.6 // indirect
+	google.golang.org/genproto v0.0.0-20200825200019-8632dd797987 // indirect
 	google.golang.org/protobuf v1.26.0-rc.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/resty.v1 v1.12.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
-	honnef.co/go/tools v0.0.1-2020.1.4 // indirect
 )
