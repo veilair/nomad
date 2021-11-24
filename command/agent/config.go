@@ -962,6 +962,7 @@ func DefaultConfig() *Config {
 			Enabled:           false,
 			EnableEventBroker: helper.BoolToPtr(true),
 			EventBufferSize:   helper.IntToPtr(100),
+			RaftProtocol:      3,
 			StartJoin:         []string{},
 			ServerJoin: &ServerJoin{
 				RetryJoin:        []string{},
