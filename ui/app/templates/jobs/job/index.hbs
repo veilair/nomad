@@ -1,5 +1,6 @@
 {{page-title "Job " this.model.name}}
-{{component (concat "job-page/" this.model.templateType)
+{{component
+  (concat "job-page/" this.model.templateType)
   job=this.model
   sortProperty=this.sortProperty
   sortDescending=this.sortDescending
@@ -7,4 +8,5 @@
   gotoJob=(action "gotoJob")
   gotoTaskGroup=(action "gotoTaskGroup")
   gotoClients=(action "gotoClients")
+  gotoAllocations=(action "gotoAllocations")
 }}

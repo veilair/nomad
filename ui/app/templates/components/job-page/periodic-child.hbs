@@ -1,19 +1,29 @@
 <JobPage::Parts::Body @job={{this.job}}>
-  <JobPage::Parts::Error @errorMessage={{this.errorMessage}} @onDismiss={{action "clearErrorMessage"}} />
-
-  <JobPage::Parts::Title @job={{this.job}} @title={{this.job.trimmedName}} @handleError={{action "handleError"}} />
-
+  <JobPage::Parts::Error
+    @errorMessage={{this.errorMessage}}
+    @onDismiss={{action "clearErrorMessage"}}
+  />
+  <JobPage::Parts::Title
+    @job={{this.job}}
+    @title={{this.job.trimmedName}}
+    @handleError={{action "handleError"}}
+  />
   <JobPage::Parts::StatsBox @job={{this.job}}>
     <:before-namespace>
       <span class="pair" data-test-job-stat="parent">
-        <span class="term">Parent</span>
-        <LinkTo @route="jobs.job" @model={{this.job.parent}} @query={{hash namespace=this.job.parent.namespace.name}}>
+        <span class="term">
+          Parent
+        </span>
+        <LinkTo
+          @route="jobs.job"
+          @model={{this.job.parent}}
+          @query={{hash namespace=this.job.parent.namespace.name}}
+        >
           {{this.job.parent.name}}
         </LinkTo>
       </span>
     </:before-namespace>
   </JobPage::Parts::StatsBox>
-
   {{#if this.job.hasClientStatus}}
     <JobPage::Parts::JobClientStatusSummary
       @gotoClients={{this.gotoClients}}
@@ -21,18 +31,18 @@
       @jobClientStatus={{this.jobClientStatus}}
     />
   {{/if}}
-
-  <JobPage::Parts::Summary @job={{this.job}} @forceCollapsed={{this.job.hasClientStatus}} />
-
+  <JobPage::Parts::Summary
+    @job={{this.job}}
+    @gotoAllocations={{this.gotoAllocations}}
+    @forceCollapsed={{this.job.hasClientStatus}}
+  />
   <JobPage::Parts::PlacementFailures @job={{this.job}} />
-
   <JobPage::Parts::TaskGroups
     @job={{this.job}}
     @sortProperty={{this.sortProperty}}
     @sortDescending={{this.sortDescending}}
-    @gotoTaskGroup={{this.gotoTaskGroup}} />
-
+    @gotoTaskGroup={{this.gotoTaskGroup}}
+  />
   <JobPage::Parts::RecentAllocations @job={{this.job}} />
-
   <JobPage::Parts::Meta @job={{this.job}} />
 </JobPage::Parts::Body>

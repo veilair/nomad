@@ -1,19 +1,29 @@
 <JobPage::Parts::Body @job={{this.job}}>
-  <JobPage::Parts::Error @errorMessage={{this.errorMessage}} @onDismiss={{action "clearErrorMessage"}} />
-
-  <JobPage::Parts::Title @job={{this.job}} @title={{this.job.trimmedName}} @handleError={{action "handleError"}} />
-
+  <JobPage::Parts::Error
+    @errorMessage={{this.errorMessage}}
+    @onDismiss={{action "clearErrorMessage"}}
+  />
+  <JobPage::Parts::Title
+    @job={{this.job}}
+    @title={{this.job.trimmedName}}
+    @handleError={{action "handleError"}}
+  />
   <JobPage::Parts::StatsBox @job={{this.job}}>
     <:before-namespace>
       <span class="pair" data-test-job-stat="parent">
-        <span class="term">Parent</span>
-        <LinkTo @route="jobs.job" @model={{this.job.parent}} @query={{hash jobNamespace=this.job.parent.namespace.name}}>
+        <span class="term">
+          Parent
+        </span>
+        <LinkTo
+          @route="jobs.job"
+          @model={{this.job.parent}}
+          @query={{hash jobNamespace=this.job.parent.namespace.name}}
+        >
           {{this.job.parent.name}}
         </LinkTo>
       </span>
     </:before-namespace>
   </JobPage::Parts::StatsBox>
-
   {{#if this.job.hasClientStatus}}
     <JobPage::Parts::JobClientStatusSummary
       @gotoClients={{this.gotoClients}}
@@ -21,19 +31,19 @@
       @jobClientStatus={{this.jobClientStatus}}
     />
   {{/if}}
-
-  <JobPage::Parts::Summary @job={{this.job}} @forceCollapsed={{this.job.hasClientStatus}} />
-
+  <JobPage::Parts::Summary
+    @job={{this.job}}
+    @gotoAllocations={{this.gotoAllocations}}
+    @forceCollapsed={{this.job.hasClientStatus}}
+  />
   <JobPage::Parts::PlacementFailures @job={{this.job}} />
-
   <JobPage::Parts::TaskGroups
     @job={{this.job}}
     @sortProperty={{this.sortProperty}}
     @sortDescending={{this.sortDescending}}
-    @gotoTaskGroup={{this.gotoTaskGroup}} />
-
+    @gotoTaskGroup={{this.gotoTaskGroup}}
+  />
   <JobPage::Parts::RecentAllocations @job={{this.job}} />
-
   <div class="boxed-section">
     <div class="boxed-section-head">
       Meta
@@ -43,20 +53,29 @@
     {{else}}
       <div class="boxed-section-body">
         <div data-test-empty-meta-message class="empty-message">
-          <h3 class="empty-message-headline">No Meta Attributes</h3>
-          <p class="empty-message-body">This job is configured with no meta attributes.</p>
+          <h3 class="empty-message-headline">
+            No Meta Attributes
+          </h3>
+          <p class="empty-message-body">
+            This job is configured with no meta attributes.
+          </p>
         </div>
       </div>
     {{/if}}
   </div>
-
   <div class="boxed-section">
-    <div class="boxed-section-head">Payload</div>
+    <div class="boxed-section-head">
+      Payload
+    </div>
     <div class="boxed-section-body is-dark">
       {{#if this.payloadJSON}}
         <JsonViewer @json={{this.payloadJSON}} />
       {{else}}
-        <pre class="cli-window is-elastic"><code>{{this.payload}}</code></pre>
+        <pre class="cli-window is-elastic">
+          <code>
+            {{this.payload}}
+          </code>
+        </pre>
       {{/if}}
     </div>
   </div>

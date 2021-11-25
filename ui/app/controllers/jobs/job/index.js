@@ -49,4 +49,14 @@ export default class IndexController extends Controller.extend(WithNamespaceRese
       },
     });
   }
+
+  @action
+  gotoAllocations(status) {
+    this.transitionToRoute('jobs.job.allocations', this.job, {
+      queryParams: {
+        status: JSON.stringify(status),
+        namespace: this.job.get('namespace.name'),
+      },
+    });
+  }
 }

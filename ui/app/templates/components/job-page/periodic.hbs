@@ -1,27 +1,42 @@
 <JobPage::Parts::Body @job={{this.job}}>
-  <JobPage::Parts::Error @errorMessage={{this.errorMessage}} @onDismiss={{action "clearErrorMessage"}} />
-
-  <JobPage::Parts::Title @job={{this.job}} @title={{this.job.trimmedName}} @handleError={{action "handleError"}}>
-    <span class="tag is-hollow">periodic</span>
-    <button data-test-force-launch class="button is-warning is-small is-inline" onclick={{action "forceLaunch"}} type="button">Force Launch</button>
+  <JobPage::Parts::Error
+    @errorMessage={{this.errorMessage}}
+    @onDismiss={{action "clearErrorMessage"}}
+  />
+  <JobPage::Parts::Title
+    @job={{this.job}}
+    @title={{this.job.trimmedName}}
+    @handleError={{action "handleError"}}
+  >
+    <span class="tag is-hollow">
+      periodic
+    </span>
+    <button
+      data-test-force-launch
+      class="button is-warning is-small is-inline"
+      onclick={{action "forceLaunch"}}
+      type="button"
+    >
+      Force Launch
+    </button>
   </JobPage::Parts::Title>
-
   <JobPage::Parts::StatsBox @job={{this.job}}>
     <:after-namespace>
       <span class="pair" data-test-job-stat="cron">
-        <span class="term">Cron</span>
+        <span class="term">
+          Cron
+        </span>
         {{this.job.periodicDetails.Spec}}
       </span>
     </:after-namespace>
   </JobPage::Parts::StatsBox>
-
-  <JobPage::Parts::Summary @job={{this.job}} />
+  <JobPage::Parts::Summary @job={{this.job}} @gotoAllocations={{this.gotoAllocations}} />
   <JobPage::Parts::Children
     @job={{this.job}}
     @sortProperty={{this.sortProperty}}
     @sortDescending={{this.sortDescending}}
     @currentPage={{this.currentPage}}
-    @gotoJob={{this.gotoJob}} />
-
+    @gotoJob={{this.gotoJob}}
+  />
   <JobPage::Parts::Meta @job={{this.job}} />
 </JobPage::Parts::Body>

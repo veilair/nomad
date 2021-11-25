@@ -1,5 +1,5 @@
 import Component from '@ember/component';
-import { computed } from '@ember/object';
+import { action, computed } from '@ember/object';
 import { classNames } from '@ember-decorators/component';
 import classic from 'ember-classic-decorator';
 
@@ -8,6 +8,12 @@ import classic from 'ember-classic-decorator';
 export default class Summary extends Component {
   job = null;
   forceCollapsed = false;
+  gotoAllocations() {}
+
+  @action
+  onSliceClick(ev, slice) {
+    this.gotoAllocations([slice.label.camelize()]);
+  }
 
   @computed('forceCollapsed')
   get isExpanded() {
