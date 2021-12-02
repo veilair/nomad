@@ -1917,3 +1917,65 @@ WAIT_LOOP:
 		t.Fatalf("bad event, expected only 3 and 5 blocked got: %q", event.DisplayMessage)
 	}
 }
+
+// TODO: Is this actually on the jobpsec
+func TestTaskTemplateManager_JobSpecMaxStale(t *testing.T) {
+
+}
+
+// TODO: Is this actually on the jobpsec
+func TestTaskTemplateManager_JobSpecRetry(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_ClientWait(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_ClientBlockQueryWait(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_RecoversAfterNomadLeaderLost(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_RecoversAfterConsulLeaderLost(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_RecoversAfterConsulUpgrade(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_RecoversAfterSlowConsulAgentRestart(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_PartitionFailover(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_HighRetryCount(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_BoundedRetries(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_ConsulKVSubkeys(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_NoStopOrRestartOnFailedTemplateRender(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_NoStopOrRestartOnFailedTemplateRender(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_NoStopOrRestartWithConsulLostLeadership(t *testing.T) {
+
+}
