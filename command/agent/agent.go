@@ -595,12 +595,20 @@ func convertClientConfig(agentConfig *Config) (*clientconfig.Config, error) {
 	conf.MaxDynamicPort = agentConfig.Client.MaxDynamicPort
 	conf.MinDynamicPort = agentConfig.Client.MinDynamicPort
 	conf.DisableRemoteExec = agentConfig.Client.DisableRemoteExec
+
 	if agentConfig.Client.TemplateConfig.FunctionBlacklist != nil {
 		conf.TemplateConfig.FunctionDenylist = agentConfig.Client.TemplateConfig.FunctionBlacklist
 	} else {
 		conf.TemplateConfig.FunctionDenylist = agentConfig.Client.TemplateConfig.FunctionDenylist
 	}
+
 	conf.TemplateConfig.DisableSandbox = agentConfig.Client.TemplateConfig.DisableSandbox
+
+	if agentConfig.Client.TemplateConfig.Wait != nil {
+		conf.TemplateConfig.Wait = agentConfig.Client.TemplateConfig.Wait.Copy()
+	}
+
+	conf.TemplateConfig.BlockQueryWait = agentConfig.Client.TemplateConfig.BlockQueryWait
 
 	hvMap := make(map[string]*structs.ClientHostVolumeConfig, len(agentConfig.Client.HostVolumes))
 	for _, v := range agentConfig.Client.HostVolumes {

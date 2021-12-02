@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	templateconfig "github.com/hashicorp/consul-template/config"
 	ctestutil "github.com/hashicorp/consul/sdk/testutil"
 	"github.com/hashicorp/nomad/client/allocdir"
 	"github.com/hashicorp/nomad/client/config"
@@ -145,6 +146,8 @@ func newTestHarness(t *testing.T, templates []*structs.Template, consul, vault b
 			TemplateConfig: &config.ClientTemplateConfig{
 				FunctionDenylist: []string{"plugin"},
 				DisableSandbox:   false,
+				Wait:             templateconfig.DefaultWaitConfig(),
+				BlockQueryWait:   templateconfig.DefaultBlockQueryWaitTime,
 			}},
 		emitRate: DefaultMaxTemplateEventRate,
 	}

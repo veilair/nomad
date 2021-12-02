@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	templateconfig "github.com/hashicorp/consul-template/config"
 	sockaddr "github.com/hashicorp/go-sockaddr"
 	"github.com/hashicorp/nomad/client/testutil"
 	"github.com/hashicorp/nomad/helper"
@@ -118,6 +119,8 @@ func TestConfig_Merge(t *testing.T) {
 			TemplateConfig: &ClientTemplateConfig{
 				FunctionDenylist: []string{"plugin"},
 				DisableSandbox:   false,
+				Wait:             templateconfig.DefaultWaitConfig(),
+				BlockQueryWait:   templateconfig.DefaultBlockQueryWaitTime,
 			},
 			Reserved: &Resources{
 				CPU:           10,
@@ -302,6 +305,8 @@ func TestConfig_Merge(t *testing.T) {
 			TemplateConfig: &ClientTemplateConfig{
 				FunctionDenylist: []string{"plugin"},
 				DisableSandbox:   false,
+				Wait:             templateconfig.DefaultWaitConfig(),
+				BlockQueryWait:   templateconfig.DefaultBlockQueryWaitTime,
 			},
 			Reserved: &Resources{
 				CPU:           15,

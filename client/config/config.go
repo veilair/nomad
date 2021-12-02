@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/consul-template/config"
 	"github.com/hashicorp/nomad/client/lib/cgutil"
 	"github.com/hashicorp/nomad/command/agent/host"
 
@@ -279,6 +280,16 @@ type Config struct {
 type ClientTemplateConfig struct {
 	FunctionDenylist []string
 	DisableSandbox   bool
+	// Wait is the quiescence timers; it defines the minimum and maximum amount of
+	// time to wait for the cluster to reach a consistent state before rendering a
+	// template. This is useful to enable in systems that have a lot of flapping,
+	// because it will reduce the number of times a template is rendered.
+	Wait *config.WaitConfig
+
+	// BlockQueryWait is amount of time in seconds to do a blocking query for.
+	// Many endpoints in Consul support a feature known as "blocking queries".
+	// A blocking query is used to wait for a potential change using long polling.
+	BlockQueryWait time.Duration
 }
 
 func (c *ClientTemplateConfig) Copy() *ClientTemplateConfig {
@@ -289,6 +300,9 @@ func (c *ClientTemplateConfig) Copy() *ClientTemplateConfig {
 	nc := new(ClientTemplateConfig)
 	*nc = *c
 	nc.FunctionDenylist = helper.CopySliceString(nc.FunctionDenylist)
+	if c.Wait != nil {
+		nc.Wait = c.Wait.Copy()
+	}
 	return nc
 }
 
@@ -330,6 +344,8 @@ func DefaultConfig() *Config {
 		TemplateConfig: &ClientTemplateConfig{
 			FunctionDenylist: []string{"plugin"},
 			DisableSandbox:   false,
+			Wait:             config.DefaultWaitConfig(),
+			BlockQueryWait:   config.DefaultBlockQueryWaitTime,
 		},
 		RPCHoldTimeout:     5 * time.Second,
 		CNIPath:            "/opt/cni/bin",

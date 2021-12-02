@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	templateconfig "github.com/hashicorp/consul-template/config"
 	sockaddr "github.com/hashicorp/go-sockaddr"
 	"github.com/hashicorp/go-sockaddr/template"
 	client "github.com/hashicorp/nomad/client/config"
@@ -337,6 +338,17 @@ type ClientTemplateConfig struct {
 	// client host. By default templates can access files only within
 	// the task directory.
 	DisableSandbox bool `hcl:"disable_file_sandbox"`
+
+	// Wait is the quiescence timers; it defines the minimum and maximum amount of
+	// time to wait for the cluster to reach a consistent state before rendering a
+	// template. This is useful to enable in systems that have a lot of flapping,
+	// because it will reduce the number of times a template is rendered.
+	Wait *templateconfig.WaitConfig
+
+	// BlockQueryWait is amount of time in seconds to do a blocking query for.
+	// Many endpoints in Consul support a feature known as "blocking queries".
+	// A blocking query is used to wait for a potential change using long polling.
+	BlockQueryWait time.Duration
 }
 
 // ACLConfig is configuration specific to the ACL system
@@ -904,6 +916,8 @@ func DevConfig(mode *devModeConfig) *Config {
 	conf.Client.TemplateConfig = &ClientTemplateConfig{
 		FunctionDenylist: []string{"plugin"},
 		DisableSandbox:   false,
+		Wait:             templateconfig.DefaultWaitConfig(),
+		BlockQueryWait:   templateconfig.DefaultBlockQueryWaitTime,
 	}
 	conf.Client.BindWildcardDefaultHostNetwork = true
 	conf.Telemetry.PrometheusMetrics = true
@@ -953,6 +967,8 @@ func DefaultConfig() *Config {
 			TemplateConfig: &ClientTemplateConfig{
 				FunctionDenylist: []string{"plugin"},
 				DisableSandbox:   false,
+				Wait:             templateconfig.DefaultWaitConfig(),
+				BlockQueryWait:   templateconfig.DefaultBlockQueryWaitTime,
 			},
 			BindWildcardDefaultHostNetwork: true,
 			CNIPath:                        "/opt/cni/bin",
