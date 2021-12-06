@@ -25,6 +25,9 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/crypto/blake2b"
+
+	templateconfig "github.com/hashicorp/consul-template/config"
 	"github.com/hashicorp/cronexpr"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/go-multierror"
@@ -41,7 +44,6 @@ import (
 	psstructs "github.com/hashicorp/nomad/plugins/shared/structs"
 	"github.com/miekg/dns"
 	"github.com/mitchellh/copystructure"
-	"golang.org/x/crypto/blake2b"
 )
 
 var (
@@ -7426,6 +7428,14 @@ type Template struct {
 	// acquired.
 	// COMPAT(0.12) VaultGrace has been ignored by Vault since Vault v0.5.
 	VaultGrace time.Duration
+
+	// Retry is the configuration for specifying how to behave on failure.
+	Retry *templateconfig.RetryConfig `mapstructure:"retry"`
+
+	// MaxStale is the maximum amount of time for staleness from Consul as given
+	// by LastContact. If supplied, Consul Template will query all servers instead
+	// of just the leader.
+	MaxStale time.Duration `mapstructure:"max_stale"`
 }
 
 // DefaultTemplate returns a default template.

@@ -784,6 +784,8 @@ type Template struct {
 	RightDelim   *string        `mapstructure:"right_delimiter" hcl:"right_delimiter,optional"`
 	Envvars      *bool          `mapstructure:"env" hcl:"env,optional"`
 	VaultGrace   *time.Duration `mapstructure:"vault_grace" hcl:"vault_grace,optional"`
+	Retry        *RetryConfig   `mapstructure:"retry"`
+	MaxStale     *time.Duration `mapstructure:"max_stale"`
 }
 
 func (tmpl *Template) Canonicalize() {
@@ -829,6 +831,47 @@ func (tmpl *Template) Canonicalize() {
 	if tmpl.VaultGrace == nil {
 		tmpl.VaultGrace = timeToPtr(0)
 	}
+
+	if tmpl.MaxStale == nil {
+		tmpl.MaxStale = timeToPtr(0)
+	}
+
+	if tmpl.Retry != nil {
+		tmpl.Retry.Canonicalize()
+	}
+}
+
+// RetryConfig represents the configuration for specifying how to behave on failure.
+type RetryConfig struct {
+	Attempts   *int           `mapstructure:"attempts"`
+	Backoff    *time.Duration `mapstructure:"backoff"`
+	MaxBackoff *time.Duration `mapstructure:"max_backoff"`
+	Enabled    *bool          `mapstructure:"enabled"`
+}
+
+func (retry *RetryConfig) Canonicalize() {
+	if retry.Attempts == nil {
+		retry.Attempts = intToPtr(0)
+	}
+	if retry.Backoff == nil {
+		retry.Backoff = timeToPtr(0)
+	}
+	if retry.MaxBackoff == nil {
+		retry.MaxBackoff = timeToPtr(0)
+	}
+	if retry.Enabled == nil {
+		retry.Enabled = boolToPtr(false)
+	}
+}
+
+// Copy returns a deep copy of this configuration.
+func (c *RetryConfig) Copy() *RetryConfig {
+	if c == nil {
+		return nil
+	}
+	rc := new(RetryConfig)
+	*rc = *c
+	return rc
 }
 
 type Vault struct {

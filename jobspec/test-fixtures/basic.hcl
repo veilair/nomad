@@ -311,6 +311,13 @@ job "binstore-storagelocker" {
         splay         = "10s"
         env           = true
         vault_grace   = "33s"
+        max_stale     = "30s"
+        retry         = {
+          attempts    = 3
+          backoff     = "2s"
+          max_backoff = "30s"
+          enabled     = true
+        }
       }
 
       template {
