@@ -14,6 +14,7 @@ import (
 
 	templateconfig "github.com/hashicorp/consul-template/config"
 	sockaddr "github.com/hashicorp/go-sockaddr"
+	client "github.com/hashicorp/nomad/client/config"
 	"github.com/hashicorp/nomad/client/testutil"
 	"github.com/hashicorp/nomad/helper"
 	"github.com/hashicorp/nomad/helper/freeport"
@@ -117,10 +118,13 @@ func TestConfig_Merge(t *testing.T) {
 			ClientMaxPort:     19996,
 			DisableRemoteExec: false,
 			TemplateConfig: &ClientTemplateConfig{
-				FunctionDenylist: []string{"plugin"},
-				DisableSandbox:   false,
-				Wait:             templateconfig.DefaultWaitConfig(),
-				BlockQueryWait:   templateconfig.DefaultBlockQueryWaitTime,
+				FunctionDenylist:   []string{"plugin"},
+				DisableSandbox:     false,
+				MaxStale:           helper.TimeToPtr(client.DefaultTemplateMaxStale),
+				Wait:               templateconfig.DefaultWaitConfig(),
+				BlockQueryWaitTime: helper.TimeToPtr(templateconfig.DefaultBlockQueryWaitTime),
+				ConsulRetry:        templateconfig.DefaultRetryConfig(),
+				VaultRetry:         templateconfig.DefaultRetryConfig(),
 			},
 			Reserved: &Resources{
 				CPU:           10,
@@ -303,10 +307,13 @@ func TestConfig_Merge(t *testing.T) {
 			MaxKillTimeout:    "50s",
 			DisableRemoteExec: false,
 			TemplateConfig: &ClientTemplateConfig{
-				FunctionDenylist: []string{"plugin"},
-				DisableSandbox:   false,
-				Wait:             templateconfig.DefaultWaitConfig(),
-				BlockQueryWait:   templateconfig.DefaultBlockQueryWaitTime,
+				FunctionDenylist:   []string{"plugin"},
+				DisableSandbox:     false,
+				MaxStale:           helper.TimeToPtr(client.DefaultTemplateMaxStale),
+				Wait:               templateconfig.DefaultWaitConfig(),
+				BlockQueryWaitTime: helper.TimeToPtr(templateconfig.DefaultBlockQueryWaitTime),
+				ConsulRetry:        templateconfig.DefaultRetryConfig(),
+				VaultRetry:         templateconfig.DefaultRetryConfig(),
 			},
 			Reserved: &Resources{
 				CPU:           15,

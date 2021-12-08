@@ -325,7 +325,6 @@ type ClientConfig struct {
 // ClientTemplateConfig is configuration on the client specific to template
 // rendering
 type ClientTemplateConfig struct {
-
 	// FunctionDenylist disables functions in consul-template that
 	// are unsafe because they expose information from the client host.
 	FunctionDenylist []string `hcl:"function_denylist"`
@@ -339,16 +338,63 @@ type ClientTemplateConfig struct {
 	// the task directory.
 	DisableSandbox bool `hcl:"disable_file_sandbox"`
 
+	// This is the maximum interval to allow "stale" data. By default, only the
+	// Consul leader will respond to queries; any requests to a follower will
+	// forward to the leader. In large clusters with many requests, this is not as
+	// scalable, so this option allows any follower to respond to a query, so long
+	// as the last-replicated data is within these bounds. Higher values result in
+	// less cluster load, but are more likely to have outdated data.
+	MaxStale *time.Duration
+
 	// Wait is the quiescence timers; it defines the minimum and maximum amount of
 	// time to wait for the cluster to reach a consistent state before rendering a
 	// template. This is useful to enable in systems that have a lot of flapping,
 	// because it will reduce the number of times a template is rendered.
 	Wait *templateconfig.WaitConfig
 
-	// BlockQueryWait is amount of time in seconds to do a blocking query for.
+	// BlockQueryWaitTime is amount of time in seconds to do a blocking query for.
 	// Many endpoints in Consul support a feature known as "blocking queries".
 	// A blocking query is used to wait for a potential change using long polling.
-	BlockQueryWait time.Duration
+	BlockQueryWaitTime *time.Duration
+
+	// This controls the retry behavior when an error is returned from Consul.
+	// Consul Template is highly fault tolerant, meaning it does not exit in the
+	// face of failure. Instead, it uses exponential back-off and retry functions
+	// to wait for the cluster to become available, as is customary in distributed
+	// systems.
+	ConsulRetry *templateconfig.RetryConfig
+
+	// This controls the retry behavior when an error is returned from Vault.
+	// Consul Template is highly fault tolerant, meaning it does not exit in the
+	// face of failure. Instead, it uses exponential back-off and retry functions
+	// to wait for the cluster to become available, as is customary in distributed
+	// systems.
+	VaultRetry *templateconfig.RetryConfig
+}
+
+// Copy returns a deep copy of an instance of a ClientTemplateConfig
+func (c *ClientTemplateConfig) Copy() *ClientTemplateConfig {
+	if c == nil {
+		return nil
+	}
+
+	nc := new(ClientTemplateConfig)
+	*nc = *c
+	nc.FunctionDenylist = helper.CopySliceString(nc.FunctionDenylist)
+
+	if c.Wait != nil {
+		nc.Wait = c.Wait.Copy()
+	}
+
+	if c.ConsulRetry != nil {
+		nc.ConsulRetry = c.ConsulRetry.Copy()
+	}
+
+	if c.VaultRetry != nil {
+		nc.VaultRetry = c.VaultRetry.Copy()
+	}
+
+	return nc
 }
 
 // ACLConfig is configuration specific to the ACL system
@@ -914,10 +960,13 @@ func DevConfig(mode *devModeConfig) *Config {
 	conf.Client.GCInodeUsageThreshold = 99
 	conf.Client.GCMaxAllocs = 50
 	conf.Client.TemplateConfig = &ClientTemplateConfig{
-		FunctionDenylist: []string{"plugin"},
-		DisableSandbox:   false,
-		Wait:             templateconfig.DefaultWaitConfig(),
-		BlockQueryWait:   templateconfig.DefaultBlockQueryWaitTime,
+		FunctionDenylist:   []string{"plugin"},
+		DisableSandbox:     false,
+		MaxStale:           helper.TimeToPtr(client.DefaultTemplateMaxStale),
+		Wait:               templateconfig.DefaultWaitConfig(),
+		BlockQueryWaitTime: helper.TimeToPtr(templateconfig.DefaultBlockQueryWaitTime),
+		ConsulRetry:        templateconfig.DefaultRetryConfig(),
+		VaultRetry:         templateconfig.DefaultRetryConfig(),
 	}
 	conf.Client.BindWildcardDefaultHostNetwork = true
 	conf.Telemetry.PrometheusMetrics = true
@@ -965,10 +1014,13 @@ func DefaultConfig() *Config {
 				RetryMaxAttempts: 0,
 			},
 			TemplateConfig: &ClientTemplateConfig{
-				FunctionDenylist: []string{"plugin"},
-				DisableSandbox:   false,
-				Wait:             templateconfig.DefaultWaitConfig(),
-				BlockQueryWait:   templateconfig.DefaultBlockQueryWaitTime,
+				FunctionDenylist:   []string{"plugin"},
+				DisableSandbox:     false,
+				MaxStale:           helper.TimeToPtr(client.DefaultTemplateMaxStale),
+				Wait:               templateconfig.DefaultWaitConfig(),
+				BlockQueryWaitTime: helper.TimeToPtr(templateconfig.DefaultBlockQueryWaitTime),
+				ConsulRetry:        templateconfig.DefaultRetryConfig(),
+				VaultRetry:         templateconfig.DefaultRetryConfig(),
 			},
 			BindWildcardDefaultHostNetwork: true,
 			CNIPath:                        "/opt/cni/bin",

@@ -144,10 +144,13 @@ func newTestHarness(t *testing.T, templates []*structs.Template, consul, vault b
 		config: &config.Config{
 			Region: region,
 			TemplateConfig: &config.ClientTemplateConfig{
-				FunctionDenylist: []string{"plugin"},
-				DisableSandbox:   false,
-				Wait:             templateconfig.DefaultWaitConfig(),
-				BlockQueryWait:   templateconfig.DefaultBlockQueryWaitTime,
+				FunctionDenylist:   []string{"plugin"},
+				DisableSandbox:     false,
+				MaxStale:           config.DefaultTemplateMaxStale,
+				Wait:               templateconfig.DefaultWaitConfig(),
+				BlockQueryWaitTime: templateconfig.DefaultBlockQueryWaitTime,
+				ConsulRetry:        templateconfig.DefaultRetryConfig(),
+				VaultRetry:         templateconfig.DefaultRetryConfig(),
 			}},
 		emitRate: DefaultMaxTemplateEventRate,
 	}
@@ -1918,13 +1921,15 @@ WAIT_LOOP:
 	}
 }
 
-// TODO: Is this actually on the jobpsec
-func TestTaskTemplateManager_JobSpecMaxStale(t *testing.T) {
+func TestTaskTemplateManager_MaxStale(t *testing.T) {
 
 }
 
-// TODO: Is this actually on the jobpsec
-func TestTaskTemplateManager_JobSpecRetry(t *testing.T) {
+func TestTaskTemplateManager_ConsulRetry(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_VaultRetry(t *testing.T) {
 
 }
 
@@ -1944,11 +1949,31 @@ func TestTaskTemplateManager_RecoversAfterConsulLeaderLost(t *testing.T) {
 
 }
 
+func TestTaskTemplateManager_RecoversAfterVaultLeaderLost(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_RecoversAfterNomadUpgrade(t *testing.T) {
+
+}
+
 func TestTaskTemplateManager_RecoversAfterConsulUpgrade(t *testing.T) {
 
 }
 
+func TestTaskTemplateManager_RecoversAfterVaultUpgrade(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_RecoversAfterSlowNomadAgentRestart(t *testing.T) {
+
+}
+
 func TestTaskTemplateManager_RecoversAfterSlowConsulAgentRestart(t *testing.T) {
+
+}
+
+func TestTaskTemplateManager_RecoversAfterSlowVaultAgentRestart(t *testing.T) {
 
 }
 
@@ -1972,10 +1997,10 @@ func TestTaskTemplateManager_NoStopOrRestartOnFailedTemplateRender(t *testing.T)
 
 }
 
-func TestTaskTemplateManager_NoStopOrRestartOnFailedTemplateRender(t *testing.T) {
+func TestTaskTemplateManager_NoStopOrRestartWithConsulLostLeadership(t *testing.T) {
 
 }
 
-func TestTaskTemplateManager_NoStopOrRestartWithConsulLostLeadership(t *testing.T) {
+func TestTaskTemplateManager_NoStopOrRestartWithVaultLostLeadership(t *testing.T) {
 
 }

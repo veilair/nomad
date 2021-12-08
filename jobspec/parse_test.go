@@ -361,12 +361,10 @@ func TestParse(t *testing.T) {
 										Perms:        stringToPtr("0644"),
 										Envvars:      boolToPtr(true),
 										VaultGrace:   timeToPtr(33 * time.Second),
-										MaxStale:     timeToPtr(30 * time.Second),
-										Retry: &api.RetryConfig{
-											Attempts:   intToPtr(3),
-											Backoff:    timeToPtr(2 * time.Second),
-											MaxBackoff: timeToPtr(30 * time.Second),
-											Enabled:    boolToPtr(true),
+										Wait: &api.WaitConfig{
+											Enabled: boolToPtr(true),
+											Min:     timeToPtr(5 * time.Second),
+											Max:     timeToPtr(10 * time.Second),
 										},
 									},
 									{

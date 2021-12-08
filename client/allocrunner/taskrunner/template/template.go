@@ -191,7 +191,7 @@ func (tm *TaskTemplateManager) Stop() {
 
 // run is the long lived loop that handles errors and templates being rendered
 func (tm *TaskTemplateManager) run() {
-	// Runner is nil if there is no templates
+	// Runner is nil if there are no templates
 	if tm.runner == nil {
 		// Unblock the start if there is nothing to do
 		close(tm.config.UnblockCh)
@@ -602,6 +602,14 @@ func parseTemplateConfigs(config *TaskTemplateManagerConfig) (map[*ctconf.Templa
 			ct.SandboxPath = &config.TaskDir
 		}
 
+		if tmpl.Wait != nil {
+			ct.Wait = &ctconf.WaitConfig{
+				Enabled: helper.BoolToPtr(tmpl.Wait.Enabled),
+				Min:     helper.TimeToPtr(tmpl.Wait.Min),
+				Max:     helper.TimeToPtr(tmpl.Wait.Max),
+			}
+		}
+
 		// Set the permissions
 		if tmpl.Perms != "" {
 			v, err := strconv.ParseUint(tmpl.Perms, 8, 12)
@@ -635,13 +643,32 @@ func newRunnerConfig(config *TaskTemplateManagerConfig,
 	}
 	conf.Templates = &flat
 
+	// TODO: Code review this. It seems that this setting is only used to force
+	// errors in a specific test scenarios. We need to rethink implementation.
 	// Force faster retries
 	if config.retryRate != 0 {
 		rate := config.retryRate
 		conf.Consul.Retry.Backoff = &rate
 	}
 
-	// Setup the Consul config
+	// Set the minimum and maximum amount of time to wait for the cluster to reach
+	// a consistent state before rendering a template.
+	if cc.TemplateConfig.Wait != nil {
+		conf.Wait = cc.TemplateConfig.Wait
+	}
+
+	// Set the amount of time to do a blocking query for.
+	if cc.TemplateConfig.BlockQueryWaitTime != nil {
+		conf.BlockQueryWaitTime = cc.TemplateConfig.BlockQueryWaitTime
+	}
+
+	// Set the stale-read threshold to allow queries to be served by followers
+	// if the last replicated data is within this bound.
+	if cc.TemplateConfig.MaxStale != nil {
+		conf.MaxStale = cc.TemplateConfig.MaxStale
+	}
+
+	// Set up the Consul config
 	if cc.ConsulConfig != nil {
 		conf.Consul.Address = &cc.ConsulConfig.Addr
 		conf.Consul.Token = &cc.ConsulConfig.Token
@@ -675,6 +702,11 @@ func newRunnerConfig(config *TaskTemplateManagerConfig,
 				Password: &parts[1],
 			}
 		}
+
+		// Set the user-specified Consul RetryConfig
+		if cc.TemplateConfig.ConsulRetry != nil {
+			conf.Consul.Retry = cc.TemplateConfig.ConsulRetry
+		}
 	}
 
 	// Get the Consul namespace from job/group config. This is the higher level
@@ -683,7 +715,7 @@ func newRunnerConfig(config *TaskTemplateManagerConfig,
 		conf.Consul.Namespace = &config.ConsulNamespace
 	}
 
-	// Setup the Vault config
+	// Set up the Vault config
 	// Always set these to ensure nothing is picked up from the environment
 	emptyStr := ""
 	conf.Vault.RenewToken = helper.BoolToPtr(false)
@@ -723,6 +755,11 @@ func newRunnerConfig(config *TaskTemplateManagerConfig,
 				CaPath:     &emptyStr,
 				ServerName: &emptyStr,
 			}
+		}
+
+		// Set the user-specified Vault RetryConfig
+		if cc.TemplateConfig.VaultRetry != nil {
+			conf.Vault.Retry = cc.TemplateConfig.VaultRetry
 		}
 	}
 

@@ -768,6 +768,11 @@ func TestJobs_Canonicalize(t *testing.T) {
 										RightDelim:   stringToPtr("}}"),
 										Envvars:      boolToPtr(false),
 										VaultGrace:   timeToPtr(0),
+										Wait: &WaitConfig{
+											Enabled: boolToPtr(true),
+											Min:     timeToPtr(5),
+											Max:     timeToPtr(10),
+										},
 									},
 									{
 										SourcePath:   stringToPtr(""),
@@ -781,6 +786,11 @@ func TestJobs_Canonicalize(t *testing.T) {
 										RightDelim:   stringToPtr("}}"),
 										Envvars:      boolToPtr(true),
 										VaultGrace:   timeToPtr(0),
+										Wait: &WaitConfig{
+											Enabled: boolToPtr(true),
+											Min:     timeToPtr(5),
+											Max:     timeToPtr(10),
+										},
 									},
 								},
 							},

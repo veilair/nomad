@@ -1147,6 +1147,7 @@ func ApiTaskToStructsTask(job *structs.Job, group *structs.TaskGroup,
 					RightDelim:   *template.RightDelim,
 					Envvars:      *template.Envvars,
 					VaultGrace:   *template.VaultGrace,
+					Wait:         ApiWaitConfigToStructsWaitConfig(template.Wait),
 				})
 		}
 	}
@@ -1162,6 +1163,20 @@ func ApiTaskToStructsTask(job *structs.Job, group *structs.TaskGroup,
 			Hook:    apiTask.Lifecycle.Hook,
 			Sidecar: apiTask.Lifecycle.Sidecar,
 		}
+	}
+}
+
+// ApiWaitConfigToStructsWaitConfig is a copy and type conversion between the API
+// representation of a WaitConfig from a struct representation of a WaitConfig.
+func ApiWaitConfigToStructsWaitConfig(waitConfig *api.WaitConfig) *structs.WaitConfig {
+	if waitConfig == nil {
+		return nil
+	}
+
+	return &structs.WaitConfig{
+		Enabled: *waitConfig.Enabled,
+		Min:     *waitConfig.Min,
+		Max:     *waitConfig.Max,
 	}
 }
 

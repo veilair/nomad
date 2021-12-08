@@ -395,6 +395,15 @@ func testJob() *Job {
 							MaxFiles:      10,
 							MaxFileSizeMB: 1,
 						},
+						Templates: []*Template{
+							{
+								Wait: &WaitConfig{
+									Enabled: true,
+									Min:     5 * time.Second,
+									Max:     10 * time.Second,
+								},
+							},
+						},
 					},
 				},
 				Meta: map[string]string{
@@ -2542,6 +2551,48 @@ func TestTemplate_Validate(t *testing.T) {
 				"as octal",
 			},
 		},
+		{
+			Tmpl: &Template{
+				SourcePath: "foo",
+				DestPath:   "local/foo",
+				ChangeMode: "noop",
+				Wait: &WaitConfig{
+					Enabled: true,
+					Min:     10 * time.Second,
+					Max:     5 * time.Second,
+				},
+			},
+			Fail: true,
+			ContainsErrs: []string{
+				"greater than",
+			},
+		},
+		{
+			Tmpl: &Template{
+				SourcePath: "foo",
+				DestPath:   "local/foo",
+				ChangeMode: "noop",
+				Wait: &WaitConfig{
+					Enabled: true,
+					Min:     5 * time.Second,
+					Max:     5 * time.Second,
+				},
+			},
+			Fail: false,
+		},
+		{
+			Tmpl: &Template{
+				SourcePath: "foo",
+				DestPath:   "local/foo",
+				ChangeMode: "noop",
+				Wait: &WaitConfig{
+					Enabled: true,
+					Min:     5 * time.Second,
+					Max:     10 * time.Second,
+				},
+			},
+			Fail: false,
+		},
 	}
 
 	for i, c := range cases {
@@ -2560,6 +2611,66 @@ func TestTemplate_Validate(t *testing.T) {
 		} else if c.Fail {
 			t.Fatalf("Case %d: should have failed: %v", i+1, err)
 		}
+	}
+}
+
+func TestTaskWaitConfig_Equals(t *testing.T) {
+	testCases := []struct {
+		name     string
+		config   *WaitConfig
+		expected *WaitConfig
+	}{
+		{
+			name: "all-fields",
+			config: &WaitConfig{
+				Enabled: true,
+				Min:     5 * time.Second,
+				Max:     10 * time.Second,
+			},
+			expected: &WaitConfig{
+				Enabled: true,
+				Min:     5 * time.Second,
+				Max:     10 * time.Second,
+			},
+		},
+		{
+			name:     "no-fields",
+			config:   &WaitConfig{},
+			expected: &WaitConfig{},
+		},
+		{
+			name: "enabled-only",
+			config: &WaitConfig{
+				Enabled: true,
+			},
+			expected: &WaitConfig{
+				Enabled: true,
+			},
+		},
+		{
+			name: "min-only",
+			config: &WaitConfig{
+				Min: 5 * time.Second,
+			},
+			expected: &WaitConfig{
+				Min: 5 * time.Second,
+			},
+		},
+		{
+			name: "max-only",
+			config: &WaitConfig{
+				Max: 10 * time.Second,
+			},
+			expected: &WaitConfig{
+				Max: 10 * time.Second,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.True(t, tc.config.Equals(tc.expected))
+		})
 	}
 }
 

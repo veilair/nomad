@@ -27,7 +27,6 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
-	templateconfig "github.com/hashicorp/consul-template/config"
 	"github.com/hashicorp/cronexpr"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/go-multierror"
@@ -7429,13 +7428,8 @@ type Template struct {
 	// COMPAT(0.12) VaultGrace has been ignored by Vault since Vault v0.5.
 	VaultGrace time.Duration
 
-	// Retry is the configuration for specifying how to behave on failure.
-	Retry *templateconfig.RetryConfig `mapstructure:"retry"`
-
-	// MaxStale is the maximum amount of time for staleness from Consul as given
-	// by LastContact. If supplied, Consul Template will query all servers instead
-	// of just the leader.
-	MaxStale time.Duration `mapstructure:"max_stale"`
+	// WaitConfig is used to override the global WaitConfig on a per-template basis
+	Wait *WaitConfig
 }
 
 // DefaultTemplate returns a default template.
@@ -7451,9 +7445,14 @@ func (t *Template) Copy() *Template {
 	if t == nil {
 		return nil
 	}
-	copy := new(Template)
-	*copy = *t
-	return copy
+	nt := new(Template)
+	*nt = *t
+
+	if t.Wait != nil {
+		nt.Wait = t.Wait.Copy()
+	}
+
+	return nt
 }
 
 func (t *Template) Canonicalize() {
@@ -7509,6 +7508,10 @@ func (t *Template) Validate() error {
 		}
 	}
 
+	if err = t.Wait.Validate(); err != nil {
+		_ = multierror.Append(&mErr, err)
+	}
+
 	return mErr.ErrorOrNil()
 }
 
@@ -7526,6 +7529,51 @@ func (t *Template) Warnings() error {
 // DiffID fulfills the DiffableWithID interface.
 func (t *Template) DiffID() string {
 	return t.DestPath
+}
+
+// WaitConfig is the Min/Max duration used by the Consul Template Watcher
+type WaitConfig struct {
+	Enabled bool
+	Min     time.Duration
+	Max     time.Duration
+}
+
+// DefaultWaitConfig is the default configuration.
+func DefaultWaitConfig() *WaitConfig {
+	return &WaitConfig{}
+}
+
+// Copy returns a deep copy of this configuration.
+func (wc *WaitConfig) Copy() *WaitConfig {
+	if wc == nil {
+		return nil
+	}
+
+	nwc := new(WaitConfig)
+	*nwc = *wc
+
+	return nwc
+}
+
+func (wc *WaitConfig) Equals(o *WaitConfig) bool {
+	if wc == nil && o == nil {
+		return true
+	}
+
+	return o.Enabled == wc.Enabled && o.Min == wc.Min && o.Max == wc.Max
+}
+
+// Validate that the min is not greater than the max
+func (wc *WaitConfig) Validate() error {
+	if wc == nil {
+		return nil
+	}
+
+	if wc.Min > wc.Max {
+		return fmt.Errorf("wait min %s is greater than max %s", wc.Min, wc.Max)
+	}
+
+	return nil
 }
 
 // AllocState records a single event that changes the state of the whole allocation

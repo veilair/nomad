@@ -596,19 +596,27 @@ func convertClientConfig(agentConfig *Config) (*clientconfig.Config, error) {
 	conf.MinDynamicPort = agentConfig.Client.MinDynamicPort
 	conf.DisableRemoteExec = agentConfig.Client.DisableRemoteExec
 
+	conf.TemplateConfig.DisableSandbox = agentConfig.Client.TemplateConfig.DisableSandbox
+	conf.TemplateConfig.MaxStale = agentConfig.Client.TemplateConfig.MaxStale
+	conf.TemplateConfig.BlockQueryWaitTime = agentConfig.Client.TemplateConfig.BlockQueryWaitTime
+
 	if agentConfig.Client.TemplateConfig.FunctionBlacklist != nil {
 		conf.TemplateConfig.FunctionDenylist = agentConfig.Client.TemplateConfig.FunctionBlacklist
 	} else {
 		conf.TemplateConfig.FunctionDenylist = agentConfig.Client.TemplateConfig.FunctionDenylist
 	}
 
-	conf.TemplateConfig.DisableSandbox = agentConfig.Client.TemplateConfig.DisableSandbox
-
 	if agentConfig.Client.TemplateConfig.Wait != nil {
 		conf.TemplateConfig.Wait = agentConfig.Client.TemplateConfig.Wait.Copy()
 	}
 
-	conf.TemplateConfig.BlockQueryWait = agentConfig.Client.TemplateConfig.BlockQueryWait
+	if agentConfig.Client.TemplateConfig.ConsulRetry != nil {
+		conf.TemplateConfig.ConsulRetry = agentConfig.Client.TemplateConfig.ConsulRetry.Copy()
+	}
+
+	if agentConfig.Client.TemplateConfig.VaultRetry != nil {
+		conf.TemplateConfig.VaultRetry = agentConfig.Client.TemplateConfig.VaultRetry.Copy()
+	}
 
 	hvMap := make(map[string]*structs.ClientHostVolumeConfig, len(agentConfig.Client.HostVolumes))
 	for _, v := range agentConfig.Client.HostVolumes {

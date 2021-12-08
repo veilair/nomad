@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/golang/snappy"
-	templateconfig "github.com/hashicorp/consul-template/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -2499,12 +2498,10 @@ func TestJobs_ApiJobToStructsJob(t *testing.T) {
 								LeftDelim:    helper.StringToPtr("abc"),
 								RightDelim:   helper.StringToPtr("def"),
 								Envvars:      helper.BoolToPtr(true),
-								MaxStale:     helper.TimeToPtr(30 * time.Second),
-								Retry: &api.RetryConfig{
-									Attempts:   helper.IntToPtr(3),
-									Backoff:    helper.TimeToPtr(2),
-									MaxBackoff: helper.TimeToPtr(10),
-									Enabled:    helper.BoolToPtr(true),
+								Wait: &api.WaitConfig{
+									Enabled: helper.BoolToPtr(true),
+									Min:     helper.TimeToPtr(5 * time.Second),
+									Max:     helper.TimeToPtr(10 * time.Second),
 								},
 							},
 						},
@@ -2899,12 +2896,10 @@ func TestJobs_ApiJobToStructsJob(t *testing.T) {
 								LeftDelim:    "abc",
 								RightDelim:   "def",
 								Envvars:      true,
-								MaxStale:     30 * time.Second,
-								Retry: &templateconfig.RetryConfig{
-									Attempts:   3,
-									Backoff:    2,
-									MaxBackoff: 10,
-									Enabled:    true,
+								Wait: &structs.WaitConfig{
+									Enabled: true,
+									Min:     5 * time.Second,
+									Max:     10 * time.Second,
 								},
 							},
 						},

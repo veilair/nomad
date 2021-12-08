@@ -60,6 +60,8 @@ var (
 		// In non-systemd systems, this mount is a no-op and the path is ignored if not present.
 		"/run/systemd/resolve": "/run/systemd/resolve",
 	}
+
+	DefaultTemplateMaxStale = 5 * time.Second
 )
 
 // RPCHandler can be provided to the Client if there is a local server
@@ -277,19 +279,16 @@ type Config struct {
 	ReservableCores []uint16
 }
 
+// ClientTemplateConfig encapsulates all the Consul Template daemon configuration
+// for template rendering.
 type ClientTemplateConfig struct {
-	FunctionDenylist []string
-	DisableSandbox   bool
-	// Wait is the quiescence timers; it defines the minimum and maximum amount of
-	// time to wait for the cluster to reach a consistent state before rendering a
-	// template. This is useful to enable in systems that have a lot of flapping,
-	// because it will reduce the number of times a template is rendered.
-	Wait *config.WaitConfig
-
-	// BlockQueryWait is amount of time in seconds to do a blocking query for.
-	// Many endpoints in Consul support a feature known as "blocking queries".
-	// A blocking query is used to wait for a potential change using long polling.
-	BlockQueryWait time.Duration
+	FunctionDenylist   []string
+	DisableSandbox     bool
+	MaxStale           *time.Duration
+	Wait               *config.WaitConfig
+	BlockQueryWaitTime *time.Duration
+	ConsulRetry        *config.RetryConfig
+	VaultRetry         *config.RetryConfig
 }
 
 func (c *ClientTemplateConfig) Copy() *ClientTemplateConfig {
@@ -300,9 +299,19 @@ func (c *ClientTemplateConfig) Copy() *ClientTemplateConfig {
 	nc := new(ClientTemplateConfig)
 	*nc = *c
 	nc.FunctionDenylist = helper.CopySliceString(nc.FunctionDenylist)
+
 	if c.Wait != nil {
 		nc.Wait = c.Wait.Copy()
 	}
+
+	if c.ConsulRetry != nil {
+		nc.ConsulRetry = c.ConsulRetry.Copy()
+	}
+
+	if c.VaultRetry != nil {
+		nc.VaultRetry = c.VaultRetry.Copy()
+	}
+
 	return nc
 }
 
@@ -342,10 +351,13 @@ func DefaultConfig() *Config {
 		NoHostUUID:              true,
 		DisableRemoteExec:       false,
 		TemplateConfig: &ClientTemplateConfig{
-			FunctionDenylist: []string{"plugin"},
-			DisableSandbox:   false,
-			Wait:             config.DefaultWaitConfig(),
-			BlockQueryWait:   config.DefaultBlockQueryWaitTime,
+			FunctionDenylist:   []string{"plugin"},
+			DisableSandbox:     false,
+			MaxStale:           helper.TimeToPtr(DefaultTemplateMaxStale),
+			Wait:               config.DefaultWaitConfig(),
+			BlockQueryWaitTime: helper.TimeToPtr(config.DefaultBlockQueryWaitTime),
+			ConsulRetry:        config.DefaultRetryConfig(),
+			VaultRetry:         config.DefaultRetryConfig(),
 		},
 		RPCHoldTimeout:     5 * time.Second,
 		CNIPath:            "/opt/cni/bin",
