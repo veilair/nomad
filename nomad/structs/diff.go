@@ -1617,11 +1617,9 @@ func waitConfigDiff(old, new *WaitConfig, contextual bool) *ObjectDiff {
 	if reflect.DeepEqual(old, new) {
 		return nil
 	} else if old == nil {
-		old = DefaultWaitConfig()
 		diff.Type = DiffTypeAdded
 		newPrimitiveFlat = flatmap.Flatten(new, nil, true)
 	} else if new == nil {
-		new = DefaultWaitConfig()
 		diff.Type = DiffTypeDeleted
 		oldPrimitiveFlat = flatmap.Flatten(old, nil, true)
 	} else {
