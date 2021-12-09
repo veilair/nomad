@@ -526,12 +526,6 @@ func (t *Task) Diff(other *Task, contextual bool) (*TaskDiff, error) {
 
 	// Template diff
 	tmplDiffs := templateDiffs(t.Templates, other.Templates, contextual)
-	// primitiveObjectSetDiff(
-	//interfaceSlice(t.Templates),
-	//interfaceSlice(other.Templates),
-	//nil,
-	//"Template",
-	//contextual)
 	if tmplDiffs != nil {
 		diff.Objects = append(diff.Objects, tmplDiffs...)
 	}
