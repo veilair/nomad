@@ -1,4 +1,5 @@
 ```release-note:improvement
-core: allow setting consul-template configuration options for retry, max_stale,
-wait, and block_query_wait.
+core: Expose consul-template configuration options at the client level for consul_retry,
+vault_retry, max_stale, block_query_wait and wait. Expose per template configuration
+for wait that will override the client level configuration.
 ```
