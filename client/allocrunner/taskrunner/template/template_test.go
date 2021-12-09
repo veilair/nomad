@@ -1921,10 +1921,102 @@ WAIT_LOOP:
 	}
 }
 
-func TestTaskTemplateManager_ClientTemplateConfigTunablesSet(t *testing.T) {
+func TestTaskTemplateManager_ClientTemplateConfig_Set(t *testing.T) {
+	t.Parallel()
 
+	testNS := "test-namespace"
+
+	clientConfig := config.DefaultConfig()
+	clientConfig.Node = mock.Node()
+
+	clientConfig.VaultConfig = &sconfig.VaultConfig{
+		Enabled:   helper.BoolToPtr(true),
+		Namespace: testNS,
+	}
+
+	clientConfig.ConsulConfig = &sconfig.ConsulConfig{
+		Namespace: testNS,
+	}
+
+	clientConfig.TemplateConfig.Wait.Enabled = helper.BoolToPtr(true)
+	clientConfig.TemplateConfig.Wait.Min = helper.TimeToPtr(5 * time.Second)
+	clientConfig.TemplateConfig.Wait.Max = helper.TimeToPtr(10 * time.Second)
+
+	retryConfig := &templateconfig.RetryConfig{
+		Attempts:   helper.IntToPtr(5),
+		Backoff:    helper.TimeToPtr(5 * time.Second),
+		MaxBackoff: helper.TimeToPtr(20 * time.Second),
+		Enabled:    helper.BoolToPtr(true),
+	}
+
+	clientConfig.TemplateConfig.ConsulRetry = retryConfig.Copy()
+	clientConfig.TemplateConfig.VaultRetry = retryConfig.Copy()
+
+	alloc := mock.Alloc()
+
+	ttmConfig := &TaskTemplateManagerConfig{
+		ClientConfig: clientConfig,
+		VaultToken:   "token",
+		EnvBuilder:   taskenv.NewBuilder(clientConfig.Node, alloc, alloc.Job.TaskGroups[0].Tasks[0], clientConfig.Region),
+	}
+
+	ctmplMapping, err := parseTemplateConfigs(ttmConfig)
+	require.NoError(t, err)
+
+	runnerConfig, err := newRunnerConfig(ttmConfig, ctmplMapping)
+	require.NoError(t, err)
+	// WaitConfig
+	require.True(t, *runnerConfig.Wait.Enabled)
+	require.Equal(t, 5*time.Second, *runnerConfig.Wait.Min)
+	require.Equal(t, 10*time.Second, *runnerConfig.Wait.Max)
+	// Direct properties
+	require.Equal(t, config.DefaultTemplateMaxStale, *runnerConfig.MaxStale)
+	require.Equal(t, templateconfig.DefaultBlockQueryWaitTime, *runnerConfig.BlockQueryWaitTime)
+	// Consul Retry
+	require.NotNil(t, runnerConfig.Consul)
+	require.NotNil(t, runnerConfig.Consul.Retry)
+	require.True(t, *runnerConfig.Consul.Retry.Enabled)
+	require.Equal(t, *retryConfig.Attempts, *runnerConfig.Consul.Retry.Attempts)
+	require.Equal(t, *retryConfig.Backoff, *runnerConfig.Consul.Retry.Backoff)
+	require.Equal(t, *retryConfig.MaxBackoff, *runnerConfig.Consul.Retry.MaxBackoff)
+	// Vault Retry
+	require.NotNil(t, runnerConfig.Vault)
+	require.NotNil(t, runnerConfig.Vault.Retry)
+	require.True(t, *runnerConfig.Vault.Retry.Enabled)
+	require.Equal(t, *retryConfig.Attempts, *runnerConfig.Vault.Retry.Attempts)
+	require.Equal(t, *retryConfig.Backoff, *runnerConfig.Vault.Retry.Backoff)
+	require.Equal(t, *retryConfig.MaxBackoff, *runnerConfig.Vault.Retry.MaxBackoff)
 }
 
-func TestTaskTemplateManager_TemplateWaitSet(t *testing.T) {
+func TestTaskTemplateManager_Template_Wait_Set(t *testing.T) {
+	t.Parallel()
 
+	c := config.DefaultConfig()
+	c.Node = mock.Node()
+
+	alloc := mock.Alloc()
+
+	ttmConfig := &TaskTemplateManagerConfig{
+		ClientConfig: c,
+		VaultToken:   "token",
+		EnvBuilder:   taskenv.NewBuilder(c.Node, alloc, alloc.Job.TaskGroups[0].Tasks[0], c.Region),
+		Templates: []*structs.Template{
+			{
+				Wait: &structs.WaitConfig{
+					Enabled: true,
+					Min:     5 * time.Second,
+					Max:     10 * time.Second,
+				},
+			},
+		},
+	}
+
+	ctmplMapping, err := parseTemplateConfigs(ttmConfig)
+	require.NoError(t, err)
+
+	for k, _ := range ctmplMapping {
+		require.True(t, *k.Wait.Enabled)
+		require.Equal(t, 5*time.Second, *k.Wait.Min)
+		require.Equal(t, 10*time.Second, *k.Wait.Max)
+	}
 }

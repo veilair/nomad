@@ -654,7 +654,7 @@ func newRunnerConfig(config *TaskTemplateManagerConfig,
 	// Set the minimum and maximum amount of time to wait for the cluster to reach
 	// a consistent state before rendering a template.
 	if cc.TemplateConfig.Wait != nil {
-		conf.Wait = cc.TemplateConfig.Wait
+		conf.Wait = cc.TemplateConfig.Wait.Copy()
 	}
 
 	// Set the amount of time to do a blocking query for.

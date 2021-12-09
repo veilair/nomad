@@ -361,11 +361,6 @@ func TestParse(t *testing.T) {
 										Perms:        stringToPtr("0644"),
 										Envvars:      boolToPtr(true),
 										VaultGrace:   timeToPtr(33 * time.Second),
-										Wait: &api.WaitConfig{
-											Enabled: boolToPtr(true),
-											Min:     timeToPtr(5 * time.Second),
-											Max:     timeToPtr(10 * time.Second),
-										},
 									},
 									{
 										SourcePath: stringToPtr("bar"),

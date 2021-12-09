@@ -395,15 +395,6 @@ func testJob() *Job {
 							MaxFiles:      10,
 							MaxFileSizeMB: 1,
 						},
-						Templates: []*Template{
-							{
-								Wait: &WaitConfig{
-									Enabled: true,
-									Min:     5 * time.Second,
-									Max:     10 * time.Second,
-								},
-							},
-						},
 					},
 				},
 				Meta: map[string]string{

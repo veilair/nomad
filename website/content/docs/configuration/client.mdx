@@ -356,7 +356,7 @@ see the [drivers documentation](/docs/drivers).
   access files only within the [task working directory].
 
 - `max_stale` `(string: "5s")` - # This is the maximum interval to allow "stale"
-  data. By default, only the Consul leader will respond to queries; any requests
+  data. By default, only the Consul leader will respond to queries. Requests
   to a follower will forward to the leader. In large clusters with many requests,
   this is not as scalable, so this option allows any follower to respond to a query,
   so long as the last-replicated data is within these bounds. Higher values result
@@ -387,7 +387,7 @@ see the [drivers documentation](/docs/drivers).
   systems.
 
   ```hcl
-  retry {
+  consul_retry {
     # This enables retries.
     enabled = true
     # This specifies the number of attempts to make before giving up. Each
@@ -414,7 +414,7 @@ see the [drivers documentation](/docs/drivers).
   systems.
 
   ```hcl
-  retry {
+  vault_retry {
     # This enables retries.
     enabled = true
     # This specifies the number of attempts to make before giving up. Each

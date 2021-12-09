@@ -438,7 +438,6 @@ func parseTemplates(result *[]*api.Template, list *ast.ObjectList) error {
 			"splay",
 			"env",
 			"vault_grace", //COMPAT(0.12) not used; emits warning in 0.11.
-			"wait",
 		}
 		if err := checkHCLKeys(o.Val, valid); err != nil {
 			return err
