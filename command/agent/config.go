@@ -344,32 +344,94 @@ type ClientTemplateConfig struct {
 	// scalable, so this option allows any follower to respond to a query, so long
 	// as the last-replicated data is within these bounds. Higher values result in
 	// less cluster load, but are more likely to have outdated data.
-	MaxStale *time.Duration
+	MaxStale    time.Duration `hcl:"-"`
+	MaxStaleHCL string        `hcl:"max_stale,optional"`
+
+	// BlockQueryWaitTime is amount of time in seconds to do a blocking query for.
+	// Many endpoints in Consul support a feature known as "blocking queries".
+	// A blocking query is used to wait for a potential change using long polling.
+	BlockQueryWaitTime    time.Duration `hcl:"-"`
+	BlockQueryWaitTimeHCL string        `hcl:"block_query_wait,optional"`
 
 	// Wait is the quiescence timers; it defines the minimum and maximum amount of
 	// time to wait for the cluster to reach a consistent state before rendering a
 	// template. This is useful to enable in systems that have a lot of flapping,
 	// because it will reduce the number of times a template is rendered.
-	Wait *templateconfig.WaitConfig
-
-	// BlockQueryWaitTime is amount of time in seconds to do a blocking query for.
-	// Many endpoints in Consul support a feature known as "blocking queries".
-	// A blocking query is used to wait for a potential change using long polling.
-	BlockQueryWaitTime *time.Duration
+	Wait *WaitConfig `hcl:"wait,optional" json:"-"`
 
 	// This controls the retry behavior when an error is returned from Consul.
 	// Consul Template is highly fault tolerant, meaning it does not exit in the
 	// face of failure. Instead, it uses exponential back-off and retry functions
 	// to wait for the cluster to become available, as is customary in distributed
 	// systems.
-	ConsulRetry *templateconfig.RetryConfig
+	ConsulRetry *RetryConfig `hcl:"consul_retry,optional"`
 
 	// This controls the retry behavior when an error is returned from Vault.
 	// Consul Template is highly fault tolerant, meaning it does not exit in the
 	// face of failure. Instead, it uses exponential back-off and retry functions
 	// to wait for the cluster to become available, as is customary in distributed
 	// systems.
-	VaultRetry *templateconfig.RetryConfig
+	VaultRetry *RetryConfig `hcl:"vault_retry,optional"`
+}
+
+// WaitConfig is mirrored from tempalateconfig.WaitConfig because we need to handle
+// the HCL indirection since mapstructure isn't supported yet in agent.ParseConfigFile
+type WaitConfig struct {
+	Enabled bool          `hcl:"enabled,optional"`
+	Min     time.Duration `hcl:"-"`
+	MinHCL  string        `hcl:"min,optional" json:"-"`
+	Max     time.Duration `hcl:"-"`
+	MaxHCL  string        `hcl:"max,optional" json:"-"`
+}
+
+func (wc *WaitConfig) Copy() *WaitConfig {
+	if wc == nil {
+		return nil
+	}
+
+	nwc := new(WaitConfig)
+	*nwc = *wc
+
+	return nwc
+}
+
+func (wc *WaitConfig) ToClient() *client.WaitConfig {
+	return &client.WaitConfig{
+		Enabled: wc.Enabled,
+		Min:     wc.Min,
+		Max:     wc.Max,
+	}
+}
+
+// RetryConfig is mirrored from tempalateconfig.WaitConfig because we need to handle
+// the HCL indirection since mapstructure isn't supported yet in agent.ParseConfigFile
+type RetryConfig struct {
+	Enabled       bool          `hcl:"enabled,optional"`
+	Attempts      int           `hcl:"attempts,optional"`
+	Backoff       time.Duration `hcl:"-"`
+	BackoffHCL    string        `hcl:"backoff,optional" json:"-"`
+	MaxBackoff    time.Duration `hcl:"-"`
+	MaxBackoffHCL string        `hcl:"max_backoff,optional" json:"-"`
+}
+
+func (rc *RetryConfig) Copy() *RetryConfig {
+	if rc == nil {
+		return nil
+	}
+
+	nrc := new(RetryConfig)
+	*nrc = *rc
+
+	return nrc
+}
+
+func (rc *RetryConfig) ToClient() *client.RetryConfig {
+	return &client.RetryConfig{
+		Enabled:    rc.Enabled,
+		Attempts:   rc.Attempts,
+		Backoff:    rc.Backoff,
+		MaxBackoff: rc.MaxBackoff,
+	}
 }
 
 // Copy returns a deep copy of an instance of a ClientTemplateConfig
@@ -962,11 +1024,11 @@ func DevConfig(mode *devModeConfig) *Config {
 	conf.Client.TemplateConfig = &ClientTemplateConfig{
 		FunctionDenylist:   []string{"plugin"},
 		DisableSandbox:     false,
-		MaxStale:           helper.TimeToPtr(client.DefaultTemplateMaxStale),
-		Wait:               templateconfig.DefaultWaitConfig(),
-		BlockQueryWaitTime: helper.TimeToPtr(templateconfig.DefaultBlockQueryWaitTime),
-		ConsulRetry:        templateconfig.DefaultRetryConfig(),
-		VaultRetry:         templateconfig.DefaultRetryConfig(),
+		MaxStale:           client.DefaultTemplateMaxStale,
+		Wait:               &WaitConfig{},
+		BlockQueryWaitTime: templateconfig.DefaultBlockQueryWaitTime,
+		ConsulRetry:        &RetryConfig{},
+		VaultRetry:         &RetryConfig{},
 	}
 	conf.Client.BindWildcardDefaultHostNetwork = true
 	conf.Telemetry.PrometheusMetrics = true
@@ -1016,11 +1078,11 @@ func DefaultConfig() *Config {
 			TemplateConfig: &ClientTemplateConfig{
 				FunctionDenylist:   []string{"plugin"},
 				DisableSandbox:     false,
-				MaxStale:           helper.TimeToPtr(client.DefaultTemplateMaxStale),
-				Wait:               templateconfig.DefaultWaitConfig(),
-				BlockQueryWaitTime: helper.TimeToPtr(templateconfig.DefaultBlockQueryWaitTime),
-				ConsulRetry:        templateconfig.DefaultRetryConfig(),
-				VaultRetry:         templateconfig.DefaultRetryConfig(),
+				MaxStale:           client.DefaultTemplateMaxStale,
+				Wait:               &WaitConfig{},
+				BlockQueryWaitTime: templateconfig.DefaultBlockQueryWaitTime,
+				ConsulRetry:        &RetryConfig{},
+				VaultRetry:         &RetryConfig{},
 			},
 			BindWildcardDefaultHostNetwork: true,
 			CNIPath:                        "/opt/cni/bin",

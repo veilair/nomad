@@ -809,7 +809,7 @@ type Template struct {
 	RightDelim   *string        `mapstructure:"right_delimiter" hcl:"right_delimiter,optional"`
 	Envvars      *bool          `mapstructure:"env" hcl:"env,optional"`
 	VaultGrace   *time.Duration `mapstructure:"vault_grace" hcl:"vault_grace,optional"`
-	Wait         *WaitConfig    `mapstructure:"wait" hcl:"wait,optional"`
+	Wait         *WaitConfig    `mapstructure:"wait" hcl:"wait,block"`
 }
 
 func (tmpl *Template) Canonicalize() {

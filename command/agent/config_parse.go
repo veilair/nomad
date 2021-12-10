@@ -32,7 +32,14 @@ func ParseConfigFile(path string) (*Config, error) {
 
 	// parse
 	c := &Config{
-		Client:    &ClientConfig{ServerJoin: &ServerJoin{}},
+		Client: &ClientConfig{
+			ServerJoin: &ServerJoin{},
+			TemplateConfig: &ClientTemplateConfig{
+				Wait:        &WaitConfig{},
+				ConsulRetry: &RetryConfig{},
+				VaultRetry:  &RetryConfig{},
+			},
+		},
 		ACL:       &ACLConfig{},
 		Audit:     &config.AuditConfig{},
 		Server:    &ServerConfig{ServerJoin: &ServerJoin{}},
@@ -62,6 +69,14 @@ func ParseConfigFile(path string) (*Config, error) {
 		{"autopilot.server_stabilization_time", &c.Autopilot.ServerStabilizationTime, &c.Autopilot.ServerStabilizationTimeHCL},
 		{"autopilot.last_contact_threshold", &c.Autopilot.LastContactThreshold, &c.Autopilot.LastContactThresholdHCL},
 		{"telemetry.collection_interval", &c.Telemetry.collectionInterval, &c.Telemetry.CollectionInterval},
+		{"client.template.block_query_wait", &c.Client.TemplateConfig.BlockQueryWaitTime, &c.Client.TemplateConfig.BlockQueryWaitTimeHCL},
+		{"client.template.max_stale", &c.Client.TemplateConfig.MaxStale, &c.Client.TemplateConfig.MaxStaleHCL},
+		{"client.template.wait.min", &c.Client.TemplateConfig.Wait.Min, &c.Client.TemplateConfig.Wait.MinHCL},
+		{"client.template.wait.max", &c.Client.TemplateConfig.Wait.Max, &c.Client.TemplateConfig.Wait.MaxHCL},
+		{"client.template.consul_retry.backoff", &c.Client.TemplateConfig.ConsulRetry.Backoff, &c.Client.TemplateConfig.ConsulRetry.BackoffHCL},
+		{"client.template.consul_retry.max_backoff", &c.Client.TemplateConfig.ConsulRetry.MaxBackoff, &c.Client.TemplateConfig.ConsulRetry.MaxBackoffHCL},
+		{"client.template.vault_retry.backoff", &c.Client.TemplateConfig.VaultRetry.Backoff, &c.Client.TemplateConfig.VaultRetry.BackoffHCL},
+		{"client.template.vault_retry.max_backoff", &c.Client.TemplateConfig.VaultRetry.MaxBackoff, &c.Client.TemplateConfig.VaultRetry.MaxBackoffHCL},
 	}
 
 	// Add enterprise audit sinks for time.Duration parsing

@@ -280,15 +280,15 @@ type Config struct {
 }
 
 // ClientTemplateConfig encapsulates all the Consul Template daemon configuration
-// for template rendering.
+// for template rendering. These all need to be pointers so that we can ensure
 type ClientTemplateConfig struct {
 	FunctionDenylist   []string
 	DisableSandbox     bool
-	MaxStale           *time.Duration
-	Wait               *config.WaitConfig
-	BlockQueryWaitTime *time.Duration
-	ConsulRetry        *config.RetryConfig
-	VaultRetry         *config.RetryConfig
+	BlockQueryWaitTime time.Duration
+	MaxStale           time.Duration
+	Wait               *WaitConfig
+	ConsulRetry        *RetryConfig
+	VaultRetry         *RetryConfig
 }
 
 func (c *ClientTemplateConfig) Copy() *ClientTemplateConfig {
@@ -313,6 +313,58 @@ func (c *ClientTemplateConfig) Copy() *ClientTemplateConfig {
 	}
 
 	return nc
+}
+
+type WaitConfig struct {
+	Enabled bool
+	Min     time.Duration
+	Max     time.Duration
+}
+
+func (wc *WaitConfig) Copy() *WaitConfig {
+	if wc == nil {
+		return nil
+	}
+
+	nwc := new(WaitConfig)
+	*nwc = *wc
+
+	return wc
+}
+
+func (wc *WaitConfig) ToConsul() *config.WaitConfig {
+	return &config.WaitConfig{
+		Enabled: &wc.Enabled,
+		Min:     &wc.Min,
+		Max:     &wc.Max,
+	}
+}
+
+type RetryConfig struct {
+	Enabled    bool
+	Attempts   int
+	Backoff    time.Duration
+	MaxBackoff time.Duration
+}
+
+func (rc *RetryConfig) Copy() *RetryConfig {
+	if rc == nil {
+		return nil
+	}
+
+	nrc := new(RetryConfig)
+	*nrc = *rc
+
+	return nrc
+}
+
+func (rc *RetryConfig) ToConsul() *config.RetryConfig {
+	return &config.RetryConfig{
+		Attempts:   &rc.Attempts,
+		Backoff:    &rc.Backoff,
+		MaxBackoff: &rc.MaxBackoff,
+		Enabled:    &rc.Enabled,
+	}
 }
 
 func (c *Config) Copy() *Config {
@@ -353,11 +405,11 @@ func DefaultConfig() *Config {
 		TemplateConfig: &ClientTemplateConfig{
 			FunctionDenylist:   []string{"plugin"},
 			DisableSandbox:     false,
-			MaxStale:           helper.TimeToPtr(DefaultTemplateMaxStale),
-			Wait:               config.DefaultWaitConfig(),
-			BlockQueryWaitTime: helper.TimeToPtr(config.DefaultBlockQueryWaitTime),
-			ConsulRetry:        config.DefaultRetryConfig(),
-			VaultRetry:         config.DefaultRetryConfig(),
+			MaxStale:           DefaultTemplateMaxStale,
+			Wait:               &WaitConfig{},
+			BlockQueryWaitTime: config.DefaultBlockQueryWaitTime,
+			ConsulRetry:        &RetryConfig{},
+			VaultRetry:         &RetryConfig{},
 		},
 		RPCHoldTimeout:     5 * time.Second,
 		CNIPath:            "/opt/cni/bin",

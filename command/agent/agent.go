@@ -607,15 +607,15 @@ func convertClientConfig(agentConfig *Config) (*clientconfig.Config, error) {
 	}
 
 	if agentConfig.Client.TemplateConfig.Wait != nil {
-		conf.TemplateConfig.Wait = agentConfig.Client.TemplateConfig.Wait.Copy()
+		conf.TemplateConfig.Wait = agentConfig.Client.TemplateConfig.Wait.ToClient()
 	}
 
 	if agentConfig.Client.TemplateConfig.ConsulRetry != nil {
-		conf.TemplateConfig.ConsulRetry = agentConfig.Client.TemplateConfig.ConsulRetry.Copy()
+		conf.TemplateConfig.ConsulRetry = agentConfig.Client.TemplateConfig.ConsulRetry.ToClient()
 	}
 
 	if agentConfig.Client.TemplateConfig.VaultRetry != nil {
-		conf.TemplateConfig.VaultRetry = agentConfig.Client.TemplateConfig.VaultRetry.Copy()
+		conf.TemplateConfig.VaultRetry = agentConfig.Client.TemplateConfig.VaultRetry.ToClient()
 	}
 
 	hvMap := make(map[string]*structs.ClientHostVolumeConfig, len(agentConfig.Client.HostVolumes))

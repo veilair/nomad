@@ -604,9 +604,9 @@ func parseTemplateConfigs(config *TaskTemplateManagerConfig) (map[*ctconf.Templa
 
 		if tmpl.Wait != nil {
 			ct.Wait = &ctconf.WaitConfig{
-				Enabled: helper.BoolToPtr(tmpl.Wait.Enabled),
-				Min:     helper.TimeToPtr(tmpl.Wait.Min),
-				Max:     helper.TimeToPtr(tmpl.Wait.Max),
+				Enabled: &tmpl.Wait.Enabled,
+				Min:     &tmpl.Wait.Min,
+				Max:     &tmpl.Wait.Max,
 			}
 		}
 
@@ -654,19 +654,15 @@ func newRunnerConfig(config *TaskTemplateManagerConfig,
 	// Set the minimum and maximum amount of time to wait for the cluster to reach
 	// a consistent state before rendering a template.
 	if cc.TemplateConfig.Wait != nil {
-		conf.Wait = cc.TemplateConfig.Wait.Copy()
+		conf.Wait = cc.TemplateConfig.Wait.ToConsul()
 	}
 
 	// Set the amount of time to do a blocking query for.
-	if cc.TemplateConfig.BlockQueryWaitTime != nil {
-		conf.BlockQueryWaitTime = cc.TemplateConfig.BlockQueryWaitTime
-	}
+	conf.BlockQueryWaitTime = &cc.TemplateConfig.BlockQueryWaitTime
 
 	// Set the stale-read threshold to allow queries to be served by followers
 	// if the last replicated data is within this bound.
-	if cc.TemplateConfig.MaxStale != nil {
-		conf.MaxStale = cc.TemplateConfig.MaxStale
-	}
+	conf.MaxStale = &cc.TemplateConfig.MaxStale
 
 	// Set up the Consul config
 	if cc.ConsulConfig != nil {
@@ -705,7 +701,7 @@ func newRunnerConfig(config *TaskTemplateManagerConfig,
 
 		// Set the user-specified Consul RetryConfig
 		if cc.TemplateConfig.ConsulRetry != nil {
-			conf.Consul.Retry = cc.TemplateConfig.ConsulRetry
+			conf.Consul.Retry = cc.TemplateConfig.ConsulRetry.ToConsul()
 		}
 	}
 
@@ -759,7 +755,7 @@ func newRunnerConfig(config *TaskTemplateManagerConfig,
 
 		// Set the user-specified Vault RetryConfig
 		if cc.TemplateConfig.VaultRetry != nil {
-			conf.Vault.Retry = cc.TemplateConfig.VaultRetry
+			conf.Vault.Retry = cc.TemplateConfig.VaultRetry.ToConsul()
 		}
 	}
 

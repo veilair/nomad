@@ -120,11 +120,11 @@ func TestConfig_Merge(t *testing.T) {
 			TemplateConfig: &ClientTemplateConfig{
 				FunctionDenylist:   []string{"plugin"},
 				DisableSandbox:     false,
-				MaxStale:           helper.TimeToPtr(client.DefaultTemplateMaxStale),
-				Wait:               templateconfig.DefaultWaitConfig(),
-				BlockQueryWaitTime: helper.TimeToPtr(templateconfig.DefaultBlockQueryWaitTime),
-				ConsulRetry:        templateconfig.DefaultRetryConfig(),
-				VaultRetry:         templateconfig.DefaultRetryConfig(),
+				MaxStale:           client.DefaultTemplateMaxStale,
+				Wait:               &WaitConfig{},
+				BlockQueryWaitTime: templateconfig.DefaultBlockQueryWaitTime,
+				ConsulRetry:        &RetryConfig{},
+				VaultRetry:         &RetryConfig{},
 			},
 			Reserved: &Resources{
 				CPU:           10,
@@ -309,11 +309,11 @@ func TestConfig_Merge(t *testing.T) {
 			TemplateConfig: &ClientTemplateConfig{
 				FunctionDenylist:   []string{"plugin"},
 				DisableSandbox:     false,
-				MaxStale:           helper.TimeToPtr(client.DefaultTemplateMaxStale),
-				Wait:               templateconfig.DefaultWaitConfig(),
-				BlockQueryWaitTime: helper.TimeToPtr(templateconfig.DefaultBlockQueryWaitTime),
-				ConsulRetry:        templateconfig.DefaultRetryConfig(),
-				VaultRetry:         templateconfig.DefaultRetryConfig(),
+				MaxStale:           client.DefaultTemplateMaxStale,
+				Wait:               &WaitConfig{},
+				BlockQueryWaitTime: templateconfig.DefaultBlockQueryWaitTime,
+				ConsulRetry:        &RetryConfig{},
+				VaultRetry:         &RetryConfig{},
 			},
 			Reserved: &Resources{
 				CPU:           15,
@@ -1326,4 +1326,43 @@ func TestEventBroker_Parse(t *testing.T) {
 		require.Equal(true, *result.EnableEventBroker)
 		require.Equal(20000, *result.EventBufferSize)
 	}
+}
+
+func TestConfig_LoadConsulTemplateConfig(t *testing.T) {
+	defaultConfig := DefaultConfig()
+	// Test that loading without template config didn't create load errors
+	agentConfig, err := LoadConfig("test-resources/minimal_client.hcl")
+	require.NoError(t, err)
+
+	// Test loading with this config didn't create load errors
+	agentConfig, err = LoadConfig("test-resources/client_with_template.hcl")
+	require.NoError(t, err)
+
+	agentConfig = defaultConfig.Merge(agentConfig)
+
+	clientAgent := Agent{config: agentConfig}
+	clientConfig, err := clientAgent.clientConfig()
+	require.NoError(t, err)
+
+	templateConfig := clientConfig.TemplateConfig
+
+	// WaitConfig
+	require.True(t, templateConfig.Wait.Enabled)
+	require.Equal(t, 2*time.Second, templateConfig.Wait.Min)
+	require.Equal(t, 60*time.Second, templateConfig.Wait.Max)
+	// Direct properties
+	require.Equal(t, 300*time.Second, templateConfig.MaxStale)
+	require.Equal(t, 90*time.Second, templateConfig.BlockQueryWaitTime)
+	// Consul Retry
+	require.NotNil(t, templateConfig.ConsulRetry)
+	require.True(t, templateConfig.ConsulRetry.Enabled)
+	require.Equal(t, 5, templateConfig.ConsulRetry.Attempts)
+	require.Equal(t, 5*time.Second, templateConfig.ConsulRetry.Backoff)
+	require.Equal(t, 10*time.Second, templateConfig.ConsulRetry.MaxBackoff)
+	// Vault Retry
+	require.NotNil(t, templateConfig.VaultRetry)
+	require.True(t, templateConfig.VaultRetry.Enabled)
+	require.Equal(t, 10, templateConfig.VaultRetry.Attempts)
+	require.Equal(t, 15*time.Second, templateConfig.VaultRetry.Backoff)
+	require.Equal(t, 20*time.Second, templateConfig.VaultRetry.MaxBackoff)
 }
