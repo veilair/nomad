@@ -1,3 +1,3 @@
 client {
-  enabled       = true
+  enabled = true
 }
