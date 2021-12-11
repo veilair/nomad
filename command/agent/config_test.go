@@ -12,9 +12,7 @@ import (
 	"testing"
 	"time"
 
-	templateconfig "github.com/hashicorp/consul-template/config"
 	sockaddr "github.com/hashicorp/go-sockaddr"
-	client "github.com/hashicorp/nomad/client/config"
 	"github.com/hashicorp/nomad/client/testutil"
 	"github.com/hashicorp/nomad/helper"
 	"github.com/hashicorp/nomad/helper/freeport"
@@ -118,13 +116,8 @@ func TestConfig_Merge(t *testing.T) {
 			ClientMaxPort:     19996,
 			DisableRemoteExec: false,
 			TemplateConfig: &ClientTemplateConfig{
-				FunctionDenylist:   []string{"plugin"},
-				DisableSandbox:     false,
-				MaxStale:           client.DefaultTemplateMaxStale,
-				Wait:               &WaitConfig{},
-				BlockQueryWaitTime: templateconfig.DefaultBlockQueryWaitTime,
-				ConsulRetry:        &RetryConfig{},
-				VaultRetry:         &RetryConfig{},
+				FunctionDenylist: []string{"plugin"},
+				DisableSandbox:   false,
 			},
 			Reserved: &Resources{
 				CPU:           10,
@@ -307,13 +300,8 @@ func TestConfig_Merge(t *testing.T) {
 			MaxKillTimeout:    "50s",
 			DisableRemoteExec: false,
 			TemplateConfig: &ClientTemplateConfig{
-				FunctionDenylist:   []string{"plugin"},
-				DisableSandbox:     false,
-				MaxStale:           client.DefaultTemplateMaxStale,
-				Wait:               &WaitConfig{},
-				BlockQueryWaitTime: templateconfig.DefaultBlockQueryWaitTime,
-				ConsulRetry:        &RetryConfig{},
-				VaultRetry:         &RetryConfig{},
+				FunctionDenylist: []string{"plugin"},
+				DisableSandbox:   false,
 			},
 			Reserved: &Resources{
 				CPU:           15,
@@ -1346,23 +1334,30 @@ func TestConfig_LoadConsulTemplateConfig(t *testing.T) {
 
 	templateConfig := clientConfig.TemplateConfig
 
+	// Make sure all fields to test are set
+	require.NotNil(t, templateConfig.BlockQueryWaitTime)
+	require.NotNil(t, templateConfig.MaxStale)
+	require.NotNil(t, templateConfig.Wait)
+	require.NotNil(t, templateConfig.ConsulRetry)
+	require.NotNil(t, templateConfig.VaultRetry)
+
 	// WaitConfig
-	require.True(t, templateConfig.Wait.Enabled)
-	require.Equal(t, 2*time.Second, templateConfig.Wait.Min)
-	require.Equal(t, 60*time.Second, templateConfig.Wait.Max)
+	require.True(t, *templateConfig.Wait.Enabled)
+	require.Equal(t, 2*time.Second, *templateConfig.Wait.Min)
+	require.Equal(t, 60*time.Second, *templateConfig.Wait.Max)
 	// Direct properties
-	require.Equal(t, 300*time.Second, templateConfig.MaxStale)
-	require.Equal(t, 90*time.Second, templateConfig.BlockQueryWaitTime)
+	require.Equal(t, 300*time.Second, *templateConfig.MaxStale)
+	require.Equal(t, 90*time.Second, *templateConfig.BlockQueryWaitTime)
 	// Consul Retry
 	require.NotNil(t, templateConfig.ConsulRetry)
-	require.True(t, templateConfig.ConsulRetry.Enabled)
-	require.Equal(t, 5, templateConfig.ConsulRetry.Attempts)
-	require.Equal(t, 5*time.Second, templateConfig.ConsulRetry.Backoff)
-	require.Equal(t, 10*time.Second, templateConfig.ConsulRetry.MaxBackoff)
+	require.True(t, *templateConfig.ConsulRetry.Enabled)
+	require.Equal(t, 5, *templateConfig.ConsulRetry.Attempts)
+	require.Equal(t, 5*time.Second, *templateConfig.ConsulRetry.Backoff)
+	require.Equal(t, 10*time.Second, *templateConfig.ConsulRetry.MaxBackoff)
 	// Vault Retry
 	require.NotNil(t, templateConfig.VaultRetry)
-	require.True(t, templateConfig.VaultRetry.Enabled)
-	require.Equal(t, 10, templateConfig.VaultRetry.Attempts)
-	require.Equal(t, 15*time.Second, templateConfig.VaultRetry.Backoff)
-	require.Equal(t, 20*time.Second, templateConfig.VaultRetry.MaxBackoff)
+	require.True(t, *templateConfig.VaultRetry.Enabled)
+	require.Equal(t, 10, *templateConfig.VaultRetry.Attempts)
+	require.Equal(t, 15*time.Second, *templateConfig.VaultRetry.Backoff)
+	require.Equal(t, 20*time.Second, *templateConfig.VaultRetry.MaxBackoff)
 }

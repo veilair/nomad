@@ -2897,9 +2897,9 @@ func TestJobs_ApiJobToStructsJob(t *testing.T) {
 								RightDelim:   "def",
 								Envvars:      true,
 								Wait: &structs.WaitConfig{
-									Enabled: true,
-									Min:     5 * time.Second,
-									Max:     10 * time.Second,
+									Enabled: helper.BoolToPtr(true),
+									Min:     helper.TimeToPtr(5 * time.Second),
+									Max:     helper.TimeToPtr(10 * time.Second),
 								},
 							},
 						},

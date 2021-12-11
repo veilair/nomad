@@ -404,7 +404,7 @@ func convertServerConfig(agentConfig *Config) (*nomad.Config, error) {
 	conf.StatsCollectionInterval = agentConfig.Telemetry.collectionInterval
 	conf.DisableDispatchedJobSummaryMetrics = agentConfig.Telemetry.DisableDispatchedJobSummaryMetrics
 
-	// Parse Limits timeout from a string into durations
+	// Parse Limits timeout from a string into convertDurations
 	if d, err := time.ParseDuration(agentConfig.Limits.RPCHandshakeTimeout); err != nil {
 		return nil, fmt.Errorf("error parsing rpc_handshake_timeout: %v", err)
 	} else if d < 0 {
@@ -596,26 +596,34 @@ func convertClientConfig(agentConfig *Config) (*clientconfig.Config, error) {
 	conf.MinDynamicPort = agentConfig.Client.MinDynamicPort
 	conf.DisableRemoteExec = agentConfig.Client.DisableRemoteExec
 
-	conf.TemplateConfig.DisableSandbox = agentConfig.Client.TemplateConfig.DisableSandbox
-	conf.TemplateConfig.MaxStale = agentConfig.Client.TemplateConfig.MaxStale
-	conf.TemplateConfig.BlockQueryWaitTime = agentConfig.Client.TemplateConfig.BlockQueryWaitTime
+	if agentConfig.Client.TemplateConfig != nil {
+		conf.TemplateConfig.DisableSandbox = agentConfig.Client.TemplateConfig.DisableSandbox
 
-	if agentConfig.Client.TemplateConfig.FunctionBlacklist != nil {
-		conf.TemplateConfig.FunctionDenylist = agentConfig.Client.TemplateConfig.FunctionBlacklist
-	} else {
-		conf.TemplateConfig.FunctionDenylist = agentConfig.Client.TemplateConfig.FunctionDenylist
-	}
+		if agentConfig.Client.TemplateConfig.MaxStale != nil {
+			conf.TemplateConfig.MaxStale = &*agentConfig.Client.TemplateConfig.MaxStale
+		}
 
-	if agentConfig.Client.TemplateConfig.Wait != nil {
-		conf.TemplateConfig.Wait = agentConfig.Client.TemplateConfig.Wait.ToClient()
-	}
+		if agentConfig.Client.TemplateConfig.BlockQueryWaitTime != nil {
+			conf.TemplateConfig.BlockQueryWaitTime = &*agentConfig.Client.TemplateConfig.BlockQueryWaitTime
+		}
 
-	if agentConfig.Client.TemplateConfig.ConsulRetry != nil {
-		conf.TemplateConfig.ConsulRetry = agentConfig.Client.TemplateConfig.ConsulRetry.ToClient()
-	}
+		if agentConfig.Client.TemplateConfig.FunctionBlacklist != nil {
+			conf.TemplateConfig.FunctionDenylist = agentConfig.Client.TemplateConfig.FunctionBlacklist
+		} else {
+			conf.TemplateConfig.FunctionDenylist = agentConfig.Client.TemplateConfig.FunctionDenylist
+		}
 
-	if agentConfig.Client.TemplateConfig.VaultRetry != nil {
-		conf.TemplateConfig.VaultRetry = agentConfig.Client.TemplateConfig.VaultRetry.ToClient()
+		if agentConfig.Client.TemplateConfig.Wait != nil {
+			conf.TemplateConfig.Wait = agentConfig.Client.TemplateConfig.Wait
+		}
+
+		if agentConfig.Client.TemplateConfig.ConsulRetry != nil {
+			conf.TemplateConfig.ConsulRetry = agentConfig.Client.TemplateConfig.ConsulRetry
+		}
+
+		if agentConfig.Client.TemplateConfig.VaultRetry != nil {
+			conf.TemplateConfig.VaultRetry = agentConfig.Client.TemplateConfig.VaultRetry
+		}
 	}
 
 	hvMap := make(map[string]*structs.ClientHostVolumeConfig, len(agentConfig.Client.HostVolumes))

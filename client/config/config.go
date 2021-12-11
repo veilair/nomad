@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -284,8 +285,8 @@ type Config struct {
 type ClientTemplateConfig struct {
 	FunctionDenylist   []string
 	DisableSandbox     bool
-	BlockQueryWaitTime time.Duration
-	MaxStale           time.Duration
+	BlockQueryWaitTime *time.Duration
+	MaxStale           *time.Duration
 	Wait               *WaitConfig
 	ConsulRetry        *RetryConfig
 	VaultRetry         *RetryConfig
@@ -299,6 +300,14 @@ func (c *ClientTemplateConfig) Copy() *ClientTemplateConfig {
 	nc := new(ClientTemplateConfig)
 	*nc = *c
 	nc.FunctionDenylist = helper.CopySliceString(nc.FunctionDenylist)
+
+	if c.BlockQueryWaitTime != nil {
+		nc.BlockQueryWaitTime = &*c.BlockQueryWaitTime
+	}
+
+	if c.MaxStale != nil {
+		nc.MaxStale = &*c.MaxStale
+	}
 
 	if c.Wait != nil {
 		nc.Wait = c.Wait.Copy()
@@ -315,36 +324,154 @@ func (c *ClientTemplateConfig) Copy() *ClientTemplateConfig {
 	return nc
 }
 
+// WaitConfig is mirrored from templateconfig.WaitConfig because we need to handle
+// the HCL conversion which happens in agent.ParseConfigFile
+// NOTE: Since Consul Template requires pointers, this type uses pointers to fields
+// which is inconsistent with how Nomad typically works. This decision was made
+// to maintain parity with the external subsystem, not to establish a new standard.
 type WaitConfig struct {
-	Enabled bool
-	Min     time.Duration
-	Max     time.Duration
+	Enabled *bool          `hcl:"enabled,optional"`
+	Min     *time.Duration `hcl:"-"`
+	MinHCL  string         `hcl:"min,optional" json:"-"`
+	Max     *time.Duration `hcl:"-"`
+	MaxHCL  string         `hcl:"max,optional" json:"-"`
 }
 
+// Copy returns a deep copy of the receiver.
 func (wc *WaitConfig) Copy() *WaitConfig {
 	if wc == nil {
 		return nil
 	}
 
 	nwc := new(WaitConfig)
-	*nwc = *wc
+
+	nwc.Enabled = &*wc.Enabled
+	nwc.Min = &*wc.Min
+	nwc.Max = &*wc.Max
 
 	return wc
 }
 
-func (wc *WaitConfig) ToConsul() *config.WaitConfig {
-	return &config.WaitConfig{
-		Enabled: &wc.Enabled,
-		Min:     &wc.Min,
-		Max:     &wc.Max,
-	}
+// Equals returns the result of reflect.DeepEqual
+func (wc *WaitConfig) Equals(other *WaitConfig) bool {
+	return reflect.DeepEqual(wc, other)
 }
 
+// IsEmpty returns true if the receiver only contains an instance with no fields set.
+func (wc *WaitConfig) IsEmpty() bool {
+	if wc == nil {
+		return true
+	}
+	return wc.Equals(&WaitConfig{})
+}
+
+// IsValid returns true if the receiver is nil, Min is nil, Min is less than or
+// equal to Max the user specified Max, or if the user didn't specify a Max.
+func (wc *WaitConfig) IsValid() bool {
+	if wc == nil {
+		return true
+	}
+
+	// If min is nil, return true
+	if wc.Min == nil {
+		return true
+	}
+
+	// If min isn't nil, make sure Max is less than Min.
+	if wc.Max != nil {
+		return *wc.Min <= *wc.Max
+	}
+
+	// Otherwise, return true. Consul Template will set a Max based off of Min.
+	return true
+}
+
+// Merge merges two WaitConfigs. The passed instance always takes precedence.
+func (wc *WaitConfig) Merge(b *WaitConfig) *WaitConfig {
+	if wc == nil {
+		return b
+	}
+
+	result := *wc
+	if b == nil || !b.IsValid() {
+		return &result
+	}
+
+	if b.Enabled != nil {
+		result.Enabled = &*b.Enabled
+	}
+
+	if b.Min != nil {
+		result.Min = &*b.Min
+	}
+
+	if b.MinHCL != "" {
+		result.MinHCL = b.MinHCL
+	}
+
+	if b.Max != nil {
+		result.Max = &*b.Max
+	}
+
+	if b.MaxHCL != "" {
+		result.MaxHCL = b.MaxHCL
+	}
+
+	return &result
+}
+
+// ToConsulTemplate converts a client WaitConfig instance to a consul-template WaitConfig
+// TODO: Needs code review. The caller (TaskTemplateManager) takes direct pointers
+// to other configuration values. Need to make sure that desired here as well.
+func (wc *WaitConfig) ToConsulTemplate() *config.WaitConfig {
+	if wc.IsEmpty() {
+		return nil
+	}
+	// TODO: Should we err here instead?
+	if !wc.IsValid() {
+		return nil
+	}
+
+	ctWaitConfig := &config.WaitConfig{}
+
+	if wc.Enabled != nil {
+		ctWaitConfig.Enabled = wc.Enabled
+	}
+
+	if wc.Min != nil {
+		ctWaitConfig.Min = wc.Min
+	}
+
+	if wc.Max != nil {
+		ctWaitConfig.Max = wc.Max
+	}
+
+	return ctWaitConfig
+}
+
+// RetryConfig is mirrored from templateconfig.WaitConfig because we need to handle
+// the HCL indirection to support mapping in agent.ParseConfigFile.
+// NOTE: Since Consul Template requires pointers, this type uses pointers to fields
+// which is inconsistent with how Nomad typically works. However, since zero in
+// Attempts and MaxBackoff have special meaning, it is necessary to know if the
+// value was actually set rather than if it defaulted to 0. The rest of the fields
+// use pointers to maintain parity with the external subystem, not to establish
+// a new standard.
 type RetryConfig struct {
-	Enabled    bool
-	Attempts   int
-	Backoff    time.Duration
-	MaxBackoff time.Duration
+	// Enabled signals if this retry is enabled.
+	Enabled *bool `hcl:"enabled,optional"`
+	// Attempts is the total number of maximum attempts to retry before letting
+	// the error fall through.
+	// 0 means unlimited.
+	Attempts *int `hcl:"attempts,optional"`
+	// Backoff is the base of the exponential backoff. This number will be
+	// multiplied by the next power of 2 on each iteration.
+	Backoff    *time.Duration `hcl:"-"`
+	BackoffHCL string         `hcl:"backoff,optional" json:"-"`
+	// MaxBackoff is an upper limit to the sleep time between retries
+	// A MaxBackoff of 0 means there is no limit to the exponential growth of the backoff.
+	MaxBackoff    *time.Duration `hcl:"-"`
+	MaxBackoffHCL string         `hcl:"max_backoff,optional" json:"-"`
 }
 
 func (rc *RetryConfig) Copy() *RetryConfig {
@@ -355,16 +482,114 @@ func (rc *RetryConfig) Copy() *RetryConfig {
 	nrc := new(RetryConfig)
 	*nrc = *rc
 
+	// Now copy pointer values
+	nrc.Enabled = &*rc.Enabled
+	nrc.Attempts = &*rc.Attempts
+	nrc.Backoff = &*rc.Backoff
+	nrc.MaxBackoff = &*rc.MaxBackoff
+
 	return nrc
 }
 
-func (rc *RetryConfig) ToConsul() *config.RetryConfig {
-	return &config.RetryConfig{
-		Attempts:   &rc.Attempts,
-		Backoff:    &rc.Backoff,
-		MaxBackoff: &rc.MaxBackoff,
-		Enabled:    &rc.Enabled,
+// Equals returns the result of reflect.DeepEqual
+func (rc *RetryConfig) Equals(other *RetryConfig) bool {
+	return reflect.DeepEqual(rc, other)
+}
+
+// IsEmpty returns true if the receiver only contains an instance with no fields set.
+func (rc *RetryConfig) IsEmpty() bool {
+	if rc == nil {
+		return true
 	}
+
+	return rc.Equals(&RetryConfig{})
+}
+
+// IsValid returns true if the receiver is nil, MaxBackoff is 0, or if Backoff
+// is less than or equal to MaxBackoff.
+func (rc *RetryConfig) IsValid() bool {
+	if rc == nil {
+		return true
+	}
+
+	// If Backoff not set, no need to validate
+	if rc.Backoff == nil {
+		return true
+	}
+
+	// MaxBackoff not set or MaxBackoff == 0, backoff is unbounded. No need to validate.
+	if rc.MaxBackoff == nil || *rc.MaxBackoff == 0 {
+		return true
+	}
+
+	return *rc.Backoff <= *rc.MaxBackoff
+}
+
+// Merge merges two RetryConfigs. The passed instance always takes precedence.
+func (rc *RetryConfig) Merge(b *RetryConfig) *RetryConfig {
+	if rc == nil {
+		return b
+	}
+
+	result := *rc
+	if b == nil || !b.IsValid() {
+		return &result
+	}
+
+	if b.Enabled != nil {
+		result.Enabled = &*b.Enabled
+	}
+
+	if b.Attempts != nil {
+		result.Attempts = &*b.Attempts
+	}
+
+	if b.Backoff != nil {
+		result.Backoff = &*b.Backoff
+	}
+
+	if b.BackoffHCL != "" {
+		result.BackoffHCL = b.BackoffHCL
+	}
+
+	if b.MaxBackoff != nil {
+		result.MaxBackoff = &*b.MaxBackoff
+	}
+
+	if b.MaxBackoffHCL != "" {
+		result.MaxBackoffHCL = b.MaxBackoffHCL
+	}
+
+	return &result
+}
+
+// ToConsulTemplate converts a client RetryConfig instance to a consul-template RetryConfig
+// TODO: Needs code review. The caller (TaskTemplateManager) takes direct pointers
+// to other configuration values. Need to make sure that desired here as well.
+func (rc *RetryConfig) ToConsulTemplate() *config.RetryConfig {
+	if !rc.IsValid() {
+		return nil
+	}
+
+	ctRetryConfig := &config.RetryConfig{}
+
+	if rc.Enabled != nil {
+		ctRetryConfig.Enabled = rc.Enabled
+	}
+
+	if rc.Attempts != nil {
+		ctRetryConfig.Attempts = rc.Attempts
+	}
+
+	if rc.Backoff != nil {
+		ctRetryConfig.Backoff = rc.Backoff
+	}
+
+	if rc.MaxBackoff != nil {
+		ctRetryConfig.MaxBackoff = &*rc.MaxBackoff
+	}
+
+	return ctRetryConfig
 }
 
 func (c *Config) Copy() *Config {
@@ -403,13 +628,8 @@ func DefaultConfig() *Config {
 		NoHostUUID:              true,
 		DisableRemoteExec:       false,
 		TemplateConfig: &ClientTemplateConfig{
-			FunctionDenylist:   []string{"plugin"},
-			DisableSandbox:     false,
-			MaxStale:           DefaultTemplateMaxStale,
-			Wait:               &WaitConfig{},
-			BlockQueryWaitTime: config.DefaultBlockQueryWaitTime,
-			ConsulRetry:        &RetryConfig{},
-			VaultRetry:         &RetryConfig{},
+			FunctionDenylist: []string{"plugin"},
+			DisableSandbox:   false,
 		},
 		RPCHoldTimeout:     5 * time.Second,
 		CNIPath:            "/opt/cni/bin",

@@ -7531,16 +7531,13 @@ func (t *Template) DiffID() string {
 	return t.DestPath
 }
 
-// WaitConfig is the Min/Max duration used by the Consul Template Watcher
+// WaitConfig is the Min/Max duration used by the Consul Template Watcher. Consul
+// Template relies on pointer based business logic. This struct uses points so
+// that we tell the different between zero values and unset values.
 type WaitConfig struct {
-	Enabled bool
-	Min     time.Duration
-	Max     time.Duration
-}
-
-// DefaultWaitConfig is the default configuration.
-func DefaultWaitConfig() *WaitConfig {
-	return &WaitConfig{}
+	Enabled *bool
+	Min     *time.Duration
+	Max     *time.Duration
 }
 
 // Copy returns a deep copy of this configuration.
@@ -7550,17 +7547,24 @@ func (wc *WaitConfig) Copy() *WaitConfig {
 	}
 
 	nwc := new(WaitConfig)
-	*nwc = *wc
+
+	if wc.Enabled != nil {
+		nwc.Enabled = &*wc.Enabled
+	}
+
+	if wc.Min != nil {
+		nwc.Min = &*wc.Min
+	}
+
+	if wc.Max != nil {
+		nwc.Max = &*wc.Max
+	}
 
 	return nwc
 }
 
 func (wc *WaitConfig) Equals(o *WaitConfig) bool {
-	if wc == nil && o == nil {
-		return true
-	}
-
-	return o.Enabled == wc.Enabled && o.Min == wc.Min && o.Max == wc.Max
+	return reflect.DeepEqual(wc, o)
 }
 
 // Validate that the min is not greater than the max
@@ -7569,7 +7573,12 @@ func (wc *WaitConfig) Validate() error {
 		return nil
 	}
 
-	if wc.Min > wc.Max {
+	// If either one is nil, they aren't comparable, so they can't be invalid.
+	if wc.Min == nil || wc.Max == nil {
+		return nil
+	}
+
+	if *wc.Min > *wc.Max {
 		return fmt.Errorf("wait min %s is greater than max %s", wc.Min, wc.Max)
 	}
 

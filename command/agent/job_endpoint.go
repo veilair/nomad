@@ -1168,15 +1168,16 @@ func ApiTaskToStructsTask(job *structs.Job, group *structs.TaskGroup,
 
 // ApiWaitConfigToStructsWaitConfig is a copy and type conversion between the API
 // representation of a WaitConfig from a struct representation of a WaitConfig.
+// TODO: Need code review to see if there's any reason we can't just take the pointer.
 func ApiWaitConfigToStructsWaitConfig(waitConfig *api.WaitConfig) *structs.WaitConfig {
 	if waitConfig == nil {
 		return nil
 	}
 
 	return &structs.WaitConfig{
-		Enabled: *waitConfig.Enabled,
-		Min:     *waitConfig.Min,
-		Max:     *waitConfig.Max,
+		Enabled: &*waitConfig.Enabled,
+		Min:     &*waitConfig.Min,
+		Max:     &*waitConfig.Max,
 	}
 }
 

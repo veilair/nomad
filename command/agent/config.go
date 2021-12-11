@@ -16,7 +16,6 @@ import (
 	"strings"
 	"time"
 
-	templateconfig "github.com/hashicorp/consul-template/config"
 	sockaddr "github.com/hashicorp/go-sockaddr"
 	"github.com/hashicorp/go-sockaddr/template"
 	client "github.com/hashicorp/nomad/client/config"
@@ -344,94 +343,40 @@ type ClientTemplateConfig struct {
 	// scalable, so this option allows any follower to respond to a query, so long
 	// as the last-replicated data is within these bounds. Higher values result in
 	// less cluster load, but are more likely to have outdated data.
-	MaxStale    time.Duration `hcl:"-"`
-	MaxStaleHCL string        `hcl:"max_stale,optional"`
+	// NOTE: Since Consul Template uses a pointer, this field uses a pointer which
+	// is inconsistent with how Nomad typically works. This decision was made to
+	// maintain parity with the external subsystem, not to establish a new standard.
+	MaxStale    *time.Duration `hcl:"-"`
+	MaxStaleHCL string         `hcl:"max_stale,optional"`
 
 	// BlockQueryWaitTime is amount of time in seconds to do a blocking query for.
 	// Many endpoints in Consul support a feature known as "blocking queries".
 	// A blocking query is used to wait for a potential change using long polling.
-	BlockQueryWaitTime    time.Duration `hcl:"-"`
-	BlockQueryWaitTimeHCL string        `hcl:"block_query_wait,optional"`
+	// NOTE: Since Consul Template uses a pointer, this field uses a pointer which
+	// is inconsistent with how Nomad typically works. This decision was made to
+	// maintain parity with the external subsystem, not to establish a new standard.
+	BlockQueryWaitTime    *time.Duration `hcl:"-"`
+	BlockQueryWaitTimeHCL string         `hcl:"block_query_wait,optional"`
 
 	// Wait is the quiescence timers; it defines the minimum and maximum amount of
 	// time to wait for the cluster to reach a consistent state before rendering a
 	// template. This is useful to enable in systems that have a lot of flapping,
 	// because it will reduce the number of times a template is rendered.
-	Wait *WaitConfig `hcl:"wait,optional" json:"-"`
+	Wait *client.WaitConfig `hcl:"wait,optional" json:"-"`
 
 	// This controls the retry behavior when an error is returned from Consul.
 	// Consul Template is highly fault tolerant, meaning it does not exit in the
 	// face of failure. Instead, it uses exponential back-off and retry functions
 	// to wait for the cluster to become available, as is customary in distributed
 	// systems.
-	ConsulRetry *RetryConfig `hcl:"consul_retry,optional"`
+	ConsulRetry *client.RetryConfig `hcl:"consul_retry,optional"`
 
 	// This controls the retry behavior when an error is returned from Vault.
 	// Consul Template is highly fault tolerant, meaning it does not exit in the
 	// face of failure. Instead, it uses exponential back-off and retry functions
 	// to wait for the cluster to become available, as is customary in distributed
 	// systems.
-	VaultRetry *RetryConfig `hcl:"vault_retry,optional"`
-}
-
-// WaitConfig is mirrored from tempalateconfig.WaitConfig because we need to handle
-// the HCL indirection since mapstructure isn't supported yet in agent.ParseConfigFile
-type WaitConfig struct {
-	Enabled bool          `hcl:"enabled,optional"`
-	Min     time.Duration `hcl:"-"`
-	MinHCL  string        `hcl:"min,optional" json:"-"`
-	Max     time.Duration `hcl:"-"`
-	MaxHCL  string        `hcl:"max,optional" json:"-"`
-}
-
-func (wc *WaitConfig) Copy() *WaitConfig {
-	if wc == nil {
-		return nil
-	}
-
-	nwc := new(WaitConfig)
-	*nwc = *wc
-
-	return nwc
-}
-
-func (wc *WaitConfig) ToClient() *client.WaitConfig {
-	return &client.WaitConfig{
-		Enabled: wc.Enabled,
-		Min:     wc.Min,
-		Max:     wc.Max,
-	}
-}
-
-// RetryConfig is mirrored from tempalateconfig.WaitConfig because we need to handle
-// the HCL indirection since mapstructure isn't supported yet in agent.ParseConfigFile
-type RetryConfig struct {
-	Enabled       bool          `hcl:"enabled,optional"`
-	Attempts      int           `hcl:"attempts,optional"`
-	Backoff       time.Duration `hcl:"-"`
-	BackoffHCL    string        `hcl:"backoff,optional" json:"-"`
-	MaxBackoff    time.Duration `hcl:"-"`
-	MaxBackoffHCL string        `hcl:"max_backoff,optional" json:"-"`
-}
-
-func (rc *RetryConfig) Copy() *RetryConfig {
-	if rc == nil {
-		return nil
-	}
-
-	nrc := new(RetryConfig)
-	*nrc = *rc
-
-	return nrc
-}
-
-func (rc *RetryConfig) ToClient() *client.RetryConfig {
-	return &client.RetryConfig{
-		Enabled:    rc.Enabled,
-		Attempts:   rc.Attempts,
-		Backoff:    rc.Backoff,
-		MaxBackoff: rc.MaxBackoff,
-	}
+	VaultRetry *client.RetryConfig `hcl:"vault_retry,optional"`
 }
 
 // Copy returns a deep copy of an instance of a ClientTemplateConfig
@@ -457,6 +402,82 @@ func (c *ClientTemplateConfig) Copy() *ClientTemplateConfig {
 	}
 
 	return nc
+}
+
+// Merge merges the values of two ClientTemplateConfigs. If first copies the receiver
+// instance, and then overrides those values with the instance to merge with.
+func (c *ClientTemplateConfig) Merge(b *ClientTemplateConfig) *ClientTemplateConfig {
+	if c == nil {
+		return b
+	}
+
+	result := *c
+
+	if b == nil {
+		return &result
+	}
+
+	if b.BlockQueryWaitTime != nil {
+		result.BlockQueryWaitTime = b.BlockQueryWaitTime
+	}
+	if b.BlockQueryWaitTimeHCL != "" {
+		result.BlockQueryWaitTimeHCL = b.BlockQueryWaitTimeHCL
+	}
+
+	if b.ConsulRetry != nil {
+		result.ConsulRetry = result.ConsulRetry.Merge(b.ConsulRetry)
+	}
+
+	result.DisableSandbox = b.DisableSandbox
+
+	// Maintain backward compatability for older clients
+	if len(b.FunctionBlacklist) > 0 {
+		for _, fn := range b.FunctionBlacklist {
+			if !helper.SliceStringContains(result.FunctionBlacklist, fn) {
+				result.FunctionBlacklist = append(result.FunctionBlacklist, fn)
+			}
+		}
+	}
+
+	if len(b.FunctionDenylist) > 0 {
+		for _, fn := range b.FunctionDenylist {
+			if !helper.SliceStringContains(result.FunctionDenylist, fn) {
+				result.FunctionDenylist = append(result.FunctionDenylist, fn)
+			}
+		}
+	}
+
+	if b.MaxStale != nil {
+		result.MaxStale = b.MaxStale
+	}
+
+	if b.MaxStaleHCL != "" {
+		result.MaxStaleHCL = b.MaxStaleHCL
+	}
+
+	if b.Wait != nil {
+		result.Wait = result.Wait.Merge(b.Wait)
+	}
+
+	if b.VaultRetry != nil {
+		result.VaultRetry = result.VaultRetry.Merge(b.VaultRetry)
+	}
+
+	return &result
+}
+
+func (c *ClientTemplateConfig) IsEmpty() bool {
+	if c == nil {
+		return true
+	}
+
+	return c.BlockQueryWaitTime == nil &&
+		c.BlockQueryWaitTimeHCL == "" &&
+		c.MaxStale == nil &&
+		c.MaxStaleHCL == "" &&
+		c.Wait.IsEmpty() &&
+		c.ConsulRetry.IsEmpty() &&
+		c.VaultRetry.IsEmpty()
 }
 
 // ACLConfig is configuration specific to the ACL system
@@ -1022,13 +1043,8 @@ func DevConfig(mode *devModeConfig) *Config {
 	conf.Client.GCInodeUsageThreshold = 99
 	conf.Client.GCMaxAllocs = 50
 	conf.Client.TemplateConfig = &ClientTemplateConfig{
-		FunctionDenylist:   []string{"plugin"},
-		DisableSandbox:     false,
-		MaxStale:           client.DefaultTemplateMaxStale,
-		Wait:               &WaitConfig{},
-		BlockQueryWaitTime: templateconfig.DefaultBlockQueryWaitTime,
-		ConsulRetry:        &RetryConfig{},
-		VaultRetry:         &RetryConfig{},
+		FunctionDenylist: []string{"plugin"},
+		DisableSandbox:   false,
 	}
 	conf.Client.BindWildcardDefaultHostNetwork = true
 	conf.Telemetry.PrometheusMetrics = true
@@ -1076,13 +1092,8 @@ func DefaultConfig() *Config {
 				RetryMaxAttempts: 0,
 			},
 			TemplateConfig: &ClientTemplateConfig{
-				FunctionDenylist:   []string{"plugin"},
-				DisableSandbox:     false,
-				MaxStale:           client.DefaultTemplateMaxStale,
-				Wait:               &WaitConfig{},
-				BlockQueryWaitTime: templateconfig.DefaultBlockQueryWaitTime,
-				ConsulRetry:        &RetryConfig{},
-				VaultRetry:         &RetryConfig{},
+				FunctionDenylist: []string{"plugin"},
+				DisableSandbox:   false,
 			},
 			BindWildcardDefaultHostNetwork: true,
 			CNIPath:                        "/opt/cni/bin",
@@ -1801,8 +1812,11 @@ func (a *ClientConfig) Merge(b *ClientConfig) *ClientConfig {
 		result.DisableRemoteExec = b.DisableRemoteExec
 	}
 
-	if b.TemplateConfig != nil {
-		result.TemplateConfig = b.TemplateConfig
+	if result.TemplateConfig == nil && b.TemplateConfig != nil {
+		templateConfig := *b.TemplateConfig
+		result.TemplateConfig = &templateConfig
+	} else if b.TemplateConfig != nil {
+		result.TemplateConfig = result.TemplateConfig.Merge(b.TemplateConfig)
 	}
 
 	// Add the servers

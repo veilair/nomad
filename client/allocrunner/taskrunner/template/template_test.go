@@ -144,13 +144,8 @@ func newTestHarness(t *testing.T, templates []*structs.Template, consul, vault b
 		config: &config.Config{
 			Region: region,
 			TemplateConfig: &config.ClientTemplateConfig{
-				FunctionDenylist:   []string{"plugin"},
-				DisableSandbox:     false,
-				MaxStale:           config.DefaultTemplateMaxStale,
-				Wait:               &config.WaitConfig{},
-				BlockQueryWaitTime: templateconfig.DefaultBlockQueryWaitTime,
-				ConsulRetry:        &config.RetryConfig{},
-				VaultRetry:         &config.RetryConfig{},
+				FunctionDenylist: []string{"plugin"},
+				DisableSandbox:   false,
 			}},
 		emitRate: DefaultMaxTemplateEventRate,
 	}
@@ -1938,15 +1933,18 @@ func TestTaskTemplateManager_ClientTemplateConfig_Set(t *testing.T) {
 		Namespace: testNS,
 	}
 
-	clientConfig.TemplateConfig.Wait.Enabled = true
-	clientConfig.TemplateConfig.Wait.Min = 5 * time.Second
-	clientConfig.TemplateConfig.Wait.Max = 10 * time.Second
+	clientConfig.TemplateConfig.MaxStale = helper.TimeToPtr(5 * time.Second)
+	clientConfig.TemplateConfig.BlockQueryWaitTime = helper.TimeToPtr(60 * time.Second)
+	clientConfig.TemplateConfig.Wait = &config.WaitConfig{}
+	clientConfig.TemplateConfig.Wait.Enabled = helper.BoolToPtr(true)
+	clientConfig.TemplateConfig.Wait.Min = helper.TimeToPtr(5 * time.Second)
+	clientConfig.TemplateConfig.Wait.Max = helper.TimeToPtr(10 * time.Second)
 
 	retryConfig := &config.RetryConfig{
-		Attempts:   5,
-		Backoff:    5 * time.Second,
-		MaxBackoff: 20 * time.Second,
-		Enabled:    true,
+		Attempts:   helper.IntToPtr(5),
+		Backoff:    helper.TimeToPtr(5 * time.Second),
+		MaxBackoff: helper.TimeToPtr(20 * time.Second),
+		Enabled:    helper.BoolToPtr(true),
 	}
 
 	clientConfig.TemplateConfig.ConsulRetry = retryConfig.Copy()
@@ -1976,16 +1974,16 @@ func TestTaskTemplateManager_ClientTemplateConfig_Set(t *testing.T) {
 	require.NotNil(t, runnerConfig.Consul)
 	require.NotNil(t, runnerConfig.Consul.Retry)
 	require.True(t, *runnerConfig.Consul.Retry.Enabled)
-	require.Equal(t, retryConfig.Attempts, *runnerConfig.Consul.Retry.Attempts)
-	require.Equal(t, retryConfig.Backoff, *runnerConfig.Consul.Retry.Backoff)
-	require.Equal(t, retryConfig.MaxBackoff, *runnerConfig.Consul.Retry.MaxBackoff)
+	require.Equal(t, *retryConfig.Attempts, *runnerConfig.Consul.Retry.Attempts)
+	require.Equal(t, *retryConfig.Backoff, *runnerConfig.Consul.Retry.Backoff)
+	require.Equal(t, *retryConfig.MaxBackoff, *runnerConfig.Consul.Retry.MaxBackoff)
 	// Vault Retry
 	require.NotNil(t, runnerConfig.Vault)
 	require.NotNil(t, runnerConfig.Vault.Retry)
 	require.True(t, *runnerConfig.Vault.Retry.Enabled)
-	require.Equal(t, retryConfig.Attempts, *runnerConfig.Vault.Retry.Attempts)
-	require.Equal(t, retryConfig.Backoff, *runnerConfig.Vault.Retry.Backoff)
-	require.Equal(t, retryConfig.MaxBackoff, *runnerConfig.Vault.Retry.MaxBackoff)
+	require.Equal(t, *retryConfig.Attempts, *runnerConfig.Vault.Retry.Attempts)
+	require.Equal(t, *retryConfig.Backoff, *runnerConfig.Vault.Retry.Backoff)
+	require.Equal(t, *retryConfig.MaxBackoff, *runnerConfig.Vault.Retry.MaxBackoff)
 }
 
 func TestTaskTemplateManager_Template_Wait_Set(t *testing.T) {
@@ -2003,9 +2001,9 @@ func TestTaskTemplateManager_Template_Wait_Set(t *testing.T) {
 		Templates: []*structs.Template{
 			{
 				Wait: &structs.WaitConfig{
-					Enabled: true,
-					Min:     5 * time.Second,
-					Max:     10 * time.Second,
+					Enabled: helper.BoolToPtr(true),
+					Min:     helper.TimeToPtr(5 * time.Second),
+					Max:     helper.TimeToPtr(10 * time.Second),
 				},
 			},
 		},
