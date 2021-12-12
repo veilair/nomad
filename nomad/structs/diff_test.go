@@ -6909,9 +6909,9 @@ func TestTaskDiff(t *testing.T) {
 						Splay:        1,
 						Perms:        "0644",
 						Wait: &WaitConfig{
-							Enabled: true,
-							Min:     5 * time.Second,
-							Max:     5 * time.Second,
+							Enabled: helper.BoolToPtr(true),
+							Min:     helper.TimeToPtr(5 * time.Second),
+							Max:     helper.TimeToPtr(5 * time.Second),
 						},
 					},
 					{
@@ -6937,9 +6937,9 @@ func TestTaskDiff(t *testing.T) {
 						Splay:        1,
 						Perms:        "0644",
 						Wait: &WaitConfig{
-							Enabled: true,
-							Min:     5 * time.Second,
-							Max:     10 * time.Second,
+							Enabled: helper.BoolToPtr(true),
+							Min:     helper.TimeToPtr(5 * time.Second),
+							Max:     helper.TimeToPtr(10 * time.Second),
 						},
 					},
 					{
@@ -6951,9 +6951,9 @@ func TestTaskDiff(t *testing.T) {
 						Splay:        3,
 						Perms:        "0776",
 						Wait: &WaitConfig{
-							Enabled: true,
-							Min:     5 * time.Second,
-							Max:     10 * time.Second,
+							Enabled: helper.BoolToPtr(true),
+							Min:     helper.TimeToPtr(5 * time.Second),
+							Max:     helper.TimeToPtr(10 * time.Second),
 						},
 					},
 				},

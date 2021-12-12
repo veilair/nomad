@@ -654,7 +654,15 @@ func newRunnerConfig(config *TaskTemplateManagerConfig,
 	// Set the minimum and maximum amount of time to wait for the cluster to reach
 	// a consistent state before rendering a template.
 	if cc.TemplateConfig.Wait != nil {
-		conf.Wait = cc.TemplateConfig.Wait.ToConsulTemplate()
+		var err error
+		err = cc.TemplateConfig.Wait.Validate()
+		if err != nil {
+			return nil, err
+		}
+		conf.Wait, err = cc.TemplateConfig.Wait.ToConsulTemplate()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Set the amount of time to do a blocking query for.
@@ -705,7 +713,15 @@ func newRunnerConfig(config *TaskTemplateManagerConfig,
 
 		// Set the user-specified Consul RetryConfig
 		if cc.TemplateConfig.ConsulRetry != nil {
-			conf.Consul.Retry = cc.TemplateConfig.ConsulRetry.ToConsulTemplate()
+			var err error
+			err = cc.TemplateConfig.ConsulRetry.Validate()
+			if err != nil {
+				return nil, err
+			}
+			conf.Consul.Retry, err = cc.TemplateConfig.ConsulRetry.ToConsulTemplate()
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -759,7 +775,14 @@ func newRunnerConfig(config *TaskTemplateManagerConfig,
 
 		// Set the user-specified Vault RetryConfig
 		if cc.TemplateConfig.VaultRetry != nil {
-			conf.Vault.Retry = cc.TemplateConfig.VaultRetry.ToConsulTemplate()
+			var err error
+			if err = cc.TemplateConfig.VaultRetry.Validate(); err != nil {
+				return nil, err
+			}
+			conf.Vault.Retry, err = cc.TemplateConfig.VaultRetry.ToConsulTemplate()
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

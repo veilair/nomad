@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -345,9 +346,15 @@ func (wc *WaitConfig) Copy() *WaitConfig {
 
 	nwc := new(WaitConfig)
 
-	nwc.Enabled = &*wc.Enabled
-	nwc.Min = &*wc.Min
-	nwc.Max = &*wc.Max
+	if wc.Enabled != nil {
+		nwc.Enabled = &*wc.Enabled
+	}
+	if wc.Min != nil {
+		nwc.Min = &*wc.Min
+	}
+	if wc.Max != nil {
+		nwc.Max = &*wc.Max
+	}
 
 	return wc
 }
@@ -365,25 +372,28 @@ func (wc *WaitConfig) IsEmpty() bool {
 	return wc.Equals(&WaitConfig{})
 }
 
-// IsValid returns true if the receiver is nil, Min is nil, Min is less than or
-// equal to Max the user specified Max, or if the user didn't specify a Max.
-func (wc *WaitConfig) IsValid() bool {
-	if wc == nil {
-		return true
+// Validate returns an error  if the receiver is nil or empty or if Min is greater
+// than Max the user specified Max, or if the user didn't specify a Max.
+func (wc *WaitConfig) Validate() error {
+	// If the config is nil or empty return false so that it is never assigned.
+	if wc == nil || wc.IsEmpty() {
+		return errors.New("wait config is nil or empty")
 	}
 
-	// If min is nil, return true
+	// If min is nil, return
 	if wc.Min == nil {
-		return true
+		return nil
 	}
 
 	// If min isn't nil, make sure Max is less than Min.
 	if wc.Max != nil {
-		return *wc.Min <= *wc.Max
+		if *wc.Min > *wc.Max {
+			return fmt.Errorf("wait config min %d is greater than max %d", *wc.Min, *wc.Max)
+		}
 	}
 
-	// Otherwise, return true. Consul Template will set a Max based off of Min.
-	return true
+	// Otherwise, return nil. Consul Template will set a Max based off of Min.
+	return nil
 }
 
 // Merge merges two WaitConfigs. The passed instance always takes precedence.
@@ -393,7 +403,7 @@ func (wc *WaitConfig) Merge(b *WaitConfig) *WaitConfig {
 	}
 
 	result := *wc
-	if b == nil || !b.IsValid() {
+	if b == nil {
 		return &result
 	}
 
@@ -423,30 +433,30 @@ func (wc *WaitConfig) Merge(b *WaitConfig) *WaitConfig {
 // ToConsulTemplate converts a client WaitConfig instance to a consul-template WaitConfig
 // TODO: Needs code review. The caller (TaskTemplateManager) takes direct pointers
 // to other configuration values. Need to make sure that desired here as well.
-func (wc *WaitConfig) ToConsulTemplate() *config.WaitConfig {
+func (wc *WaitConfig) ToConsulTemplate() (*config.WaitConfig, error) {
 	if wc.IsEmpty() {
-		return nil
-	}
-	// TODO: Should we err here instead?
-	if !wc.IsValid() {
-		return nil
+		return nil, errors.New("wait config is empty")
 	}
 
-	ctWaitConfig := &config.WaitConfig{}
+	if err := wc.Validate(); err != nil {
+		return nil, err
+	}
+
+	result := &config.WaitConfig{}
 
 	if wc.Enabled != nil {
-		ctWaitConfig.Enabled = wc.Enabled
+		result.Enabled = wc.Enabled
 	}
 
 	if wc.Min != nil {
-		ctWaitConfig.Min = wc.Min
+		result.Min = wc.Min
 	}
 
 	if wc.Max != nil {
-		ctWaitConfig.Max = wc.Max
+		result.Max = wc.Max
 	}
 
-	return ctWaitConfig
+	return result, nil
 }
 
 // RetryConfig is mirrored from templateconfig.WaitConfig because we need to handle
@@ -483,10 +493,18 @@ func (rc *RetryConfig) Copy() *RetryConfig {
 	*nrc = *rc
 
 	// Now copy pointer values
-	nrc.Enabled = &*rc.Enabled
-	nrc.Attempts = &*rc.Attempts
-	nrc.Backoff = &*rc.Backoff
-	nrc.MaxBackoff = &*rc.MaxBackoff
+	if rc.Enabled != nil {
+		nrc.Enabled = &*rc.Enabled
+	}
+	if rc.Attempts != nil {
+		nrc.Attempts = &*rc.Attempts
+	}
+	if rc.Backoff != nil {
+		nrc.Backoff = &*rc.Backoff
+	}
+	if rc.MaxBackoff != nil {
+		nrc.MaxBackoff = &*rc.MaxBackoff
+	}
 
 	return nrc
 }
@@ -505,24 +523,29 @@ func (rc *RetryConfig) IsEmpty() bool {
 	return rc.Equals(&RetryConfig{})
 }
 
-// IsValid returns true if the receiver is nil, MaxBackoff is 0, or if Backoff
-// is less than or equal to MaxBackoff.
-func (rc *RetryConfig) IsValid() bool {
-	if rc == nil {
-		return true
+// Validate returns an error if the receiver is nil or empty, or if Backoff
+// is greater than  MaxBackoff.
+func (rc *RetryConfig) Validate() error {
+	// If the config is nil or empty return false so that it is never assigned.
+	if rc == nil || rc.IsEmpty() {
+		return errors.New("retry config is nil or empty")
 	}
 
 	// If Backoff not set, no need to validate
 	if rc.Backoff == nil {
-		return true
+		return nil
 	}
 
 	// MaxBackoff not set or MaxBackoff == 0, backoff is unbounded. No need to validate.
 	if rc.MaxBackoff == nil || *rc.MaxBackoff == 0 {
-		return true
+		return nil
 	}
 
-	return *rc.Backoff <= *rc.MaxBackoff
+	if *rc.Backoff > *rc.MaxBackoff {
+		return fmt.Errorf("retry config backoff %d is greater than max_backoff %d", *rc.Backoff, *rc.MaxBackoff)
+	}
+
+	return nil
 }
 
 // Merge merges two RetryConfigs. The passed instance always takes precedence.
@@ -532,7 +555,7 @@ func (rc *RetryConfig) Merge(b *RetryConfig) *RetryConfig {
 	}
 
 	result := *rc
-	if b == nil || !b.IsValid() {
+	if b == nil {
 		return &result
 	}
 
@@ -566,30 +589,30 @@ func (rc *RetryConfig) Merge(b *RetryConfig) *RetryConfig {
 // ToConsulTemplate converts a client RetryConfig instance to a consul-template RetryConfig
 // TODO: Needs code review. The caller (TaskTemplateManager) takes direct pointers
 // to other configuration values. Need to make sure that desired here as well.
-func (rc *RetryConfig) ToConsulTemplate() *config.RetryConfig {
-	if !rc.IsValid() {
-		return nil
+func (rc *RetryConfig) ToConsulTemplate() (*config.RetryConfig, error) {
+	if err := rc.Validate(); err != nil {
+		return nil, err
 	}
 
-	ctRetryConfig := &config.RetryConfig{}
+	result := &config.RetryConfig{}
 
 	if rc.Enabled != nil {
-		ctRetryConfig.Enabled = rc.Enabled
+		result.Enabled = rc.Enabled
 	}
 
 	if rc.Attempts != nil {
-		ctRetryConfig.Attempts = rc.Attempts
+		result.Attempts = rc.Attempts
 	}
 
 	if rc.Backoff != nil {
-		ctRetryConfig.Backoff = rc.Backoff
+		result.Backoff = rc.Backoff
 	}
 
 	if rc.MaxBackoff != nil {
-		ctRetryConfig.MaxBackoff = &*rc.MaxBackoff
+		result.MaxBackoff = &*rc.MaxBackoff
 	}
 
-	return ctRetryConfig
+	return result, nil
 }
 
 func (c *Config) Copy() *Config {

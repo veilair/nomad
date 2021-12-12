@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/nomad/helper"
 	"github.com/hashicorp/nomad/helper/uuid"
 
 	"github.com/kr/pretty"
@@ -2548,9 +2549,9 @@ func TestTemplate_Validate(t *testing.T) {
 				DestPath:   "local/foo",
 				ChangeMode: "noop",
 				Wait: &WaitConfig{
-					Enabled: true,
-					Min:     10 * time.Second,
-					Max:     5 * time.Second,
+					Enabled: helper.BoolToPtr(true),
+					Min:     helper.TimeToPtr(10 * time.Second),
+					Max:     helper.TimeToPtr(5 * time.Second),
 				},
 			},
 			Fail: true,
@@ -2564,9 +2565,9 @@ func TestTemplate_Validate(t *testing.T) {
 				DestPath:   "local/foo",
 				ChangeMode: "noop",
 				Wait: &WaitConfig{
-					Enabled: true,
-					Min:     5 * time.Second,
-					Max:     5 * time.Second,
+					Enabled: helper.BoolToPtr(true),
+					Min:     helper.TimeToPtr(5 * time.Second),
+					Max:     helper.TimeToPtr(5 * time.Second),
 				},
 			},
 			Fail: false,
@@ -2577,9 +2578,9 @@ func TestTemplate_Validate(t *testing.T) {
 				DestPath:   "local/foo",
 				ChangeMode: "noop",
 				Wait: &WaitConfig{
-					Enabled: true,
-					Min:     5 * time.Second,
-					Max:     10 * time.Second,
+					Enabled: helper.BoolToPtr(true),
+					Min:     helper.TimeToPtr(5 * time.Second),
+					Max:     helper.TimeToPtr(10 * time.Second),
 				},
 			},
 			Fail: false,
@@ -2614,14 +2615,14 @@ func TestTaskWaitConfig_Equals(t *testing.T) {
 		{
 			name: "all-fields",
 			config: &WaitConfig{
-				Enabled: true,
-				Min:     5 * time.Second,
-				Max:     10 * time.Second,
+				Enabled: helper.BoolToPtr(true),
+				Min:     helper.TimeToPtr(5 * time.Second),
+				Max:     helper.TimeToPtr(10 * time.Second),
 			},
 			expected: &WaitConfig{
-				Enabled: true,
-				Min:     5 * time.Second,
-				Max:     10 * time.Second,
+				Enabled: helper.BoolToPtr(true),
+				Min:     helper.TimeToPtr(5 * time.Second),
+				Max:     helper.TimeToPtr(10 * time.Second),
 			},
 		},
 		{
@@ -2632,28 +2633,28 @@ func TestTaskWaitConfig_Equals(t *testing.T) {
 		{
 			name: "enabled-only",
 			config: &WaitConfig{
-				Enabled: true,
+				Enabled: helper.BoolToPtr(true),
 			},
 			expected: &WaitConfig{
-				Enabled: true,
+				Enabled: helper.BoolToPtr(true),
 			},
 		},
 		{
 			name: "min-only",
 			config: &WaitConfig{
-				Min: 5 * time.Second,
+				Min: helper.TimeToPtr(5 * time.Second),
 			},
 			expected: &WaitConfig{
-				Min: 5 * time.Second,
+				Min: helper.TimeToPtr(5 * time.Second),
 			},
 		},
 		{
 			name: "max-only",
 			config: &WaitConfig{
-				Max: 10 * time.Second,
+				Max: helper.TimeToPtr(10 * time.Second),
 			},
 			expected: &WaitConfig{
-				Max: 10 * time.Second,
+				Max: helper.TimeToPtr(10 * time.Second),
 			},
 		},
 	}
